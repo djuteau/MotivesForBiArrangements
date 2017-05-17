@@ -8,6 +8,8 @@ m := [
       [ 1, 1 ]
       ];
 
+m := Matroid( m, Q );
+
 chi := function( flat )
     if flat = [ ] then
         Error( "\n" );
@@ -20,7 +22,5 @@ chi := function( flat )
     return true;
     
 end;
-
-m := Matroid( m, Q );
 
 OS := OrlikSolomonBicomplex( m, chi );
