@@ -32,7 +32,7 @@ function( C, D, l, n )
 			fi;
 		end
 	);
-	ll := MakeInfList( ll, min, zeroId );
+	ll := MakeInfList( middle, min, zeroId );
 	return CochainMorphism( C, D, ll );
 end );
 
@@ -62,9 +62,9 @@ BiOS := function( m, chi )
 
     flats := MakeInfList( Flats( m ), 0, [] );
 
-	Q := HomalgFieldOfRationals();
+    Q := HomalgFieldOfRationals();
     zero := 0 * Q;
- 	zeroId := IdentityMorphism( zero );       
+    zeroId := IdentityMorphism( zero );       
     zeroComplex := CochainComplex( [ zeroId ] );
     one := 1 * Q;
     oneId := IdentityMorphism( one );
@@ -73,12 +73,12 @@ BiOS := function( m, chi )
     Vect := CapCategory( zero );
 
     A := rec(
-             (String( [ ] )) := StalkDoubleCochainComplex( 1 * Q, 0, 0 ),
+             (String( [ ] )) := StalkDoubleCochainComplex( one, 0, 0 ),
              );
 
     for k in [ 1 .. RankOfMatroid( m ) ] do
 		for SIGMA in flats[k] do
-			SS := MakeInfList( List( Sublist( flats, 0, k - 1 ), l -> Filtered( l, S -> IsSubset( SIGMA, S ) ) ), 0, [] );
+		SS := MakeInfList( List( Sublist( flats, 0, k ), l -> Filtered( l, S -> IsSubset( SIGMA, S ) ) ), 0, [] ); ### Beware of Sublist !!!
 			
             rows := MakeInfList(
             	List(
@@ -87,11 +87,11 @@ BiOS := function( m, chi )
             			List(
             				[ j - k .. 0 ],
             				i -> MorphismBetweenDirectSums(
-            					DirectSum( Vect, List( SS[i + j], S -> ObjectAt( A.( String( S ) ), i, j ) ) ),
+            					DirectSum( Vect, List( SS[-i + j], S -> ObjectAt( A.( String( S ) ), i, j ) ) ),
             					List(
-            						SS[i + j],
+            						SS[-i + j],
             						S -> List(
-            							SS[i + j + 1],
+            							SS[-i + j + 1],
             							function(T)
             								if IsSubset( S, T ) then
             									return A.( JoinStringsWithSeparator( [ S, T, i, j ] ) );
@@ -100,7 +100,7 @@ BiOS := function( m, chi )
             							end
             						)
             					),
-            					DirectSum( Vect, List( SS[i + j + 1], T -> ObjectAt( A.( String( T ) ), i + 1, j ) ) )
+            					DirectSum( Vect, List( SS[-i + j - 1], T -> ObjectAt( A.( String( T ) ), i + 1, j ) ) )
             				)
             			),
             			j - k,
@@ -111,18 +111,18 @@ BiOS := function( m, chi )
             	InfListOfZeroMorphisms
             );
             
-			cols := MakeInfList(
+	    cols := MakeInfList(
             	List(
             		[ -k + 1 .. 0 ],
             		i -> MakeInfList(
             			List(
-	          	  			[ -1 .. k + i - 2 ],
+	          	  		[ -1 .. k + i - 1 ],
 	            			j -> MorphismBetweenDirectSums(
-    	        				DirectSum( Vect, List( SS[i + j], T -> ObjectAt( A.( String( T ) ), i, j ) ) ),
+    	        				DirectSum( Vect, List( SS[-i + j], T -> ObjectAt( A.( String( T ) ), i, j ) ) ),
     	        				List(
-    	        					SS[i + j], 
+    	        					SS[-i + j], 
     	        					T -> List(
-    	        						SS[i + j + 1],  
+    	        						SS[-i + j + 1],  
 	    	        					function(S)
 	    	        						if IsSubset( S, T ) then 
 	    	        							return A.( JoinStringsWithSeparator( [ T, S, i, j ] ) );
@@ -131,7 +131,7 @@ BiOS := function( m, chi )
 	            						end
 		        					)
 	        					),
-    	        				DirectSum( Vect, List( SS[i + j + 1], S -> ObjectAt( A.( String( S ) ), i, j + 1) ) )
+    	        				DirectSum( Vect, List( SS[-i + j + 1], S -> ObjectAt( A.( String( S ) ), i, j + 1) ) )
     	        			)
             			),
             			-1,

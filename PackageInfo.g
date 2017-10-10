@@ -97,6 +97,7 @@ Dependencies := rec(
   NeededOtherPackages := [ [ "GAPDoc", ">= 1.5" ],
                    [ "alcove", ">= 2016-09-21" ],
                    [ "M2", ">= 2017.05.01" ],
+                   [ "LinearAlgebraForCAP", ">= 0" ]
                    ],
   SuggestedOtherPackages := [ ],
   ExternalConditions := [ ],
