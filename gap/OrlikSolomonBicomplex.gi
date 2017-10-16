@@ -174,10 +174,13 @@ InstallMethod( OrlikSolomonBicomplex,
     A := rec(
     		cat := cat,
     		matroid := m,
+    		flats := Flats( m ),
     		rank := RankFunction( m ),
     		coloring := chi,
              (JoinStringsWithSeparator( [ [ ], 0, 0 ] )) := TensorUnit( cat ),
     		);
+    		
+    A.Smin := A.flats[Length( A.flats )][1];
     
     for k in [ 1 .. RankOfMatroid( m ) ] do
         for Sigma in FlatsOfRankExtended( m, k ) do
@@ -440,4 +443,68 @@ DisplayOrlikSolomonBicomplexDifferentials := function( A, Sigma )
 			Display( OrlikSolomonBicomplexDifferential( A, Sigma, i, j, i, j + 1 ) );
 			Print( "\n" );		od;
 	od;
+end;
+
+OrlikSolomonBicomplexHorizontalHomologyObject := function( A, S, i, j )
+  local alpha, beta, iota, lambda;
+  
+  alpha := OrlikSolomonBicomplexDifferential( A, S, i + 1, j, i, j );
+  beta := OrlikSolomonBicomplexDifferential( A, S, i, j, i - 1, j );
+  
+  if not IsZero( PreCompose( alpha, beta ) ) then
+      
+      Error( "the composition of the given morphisms has to be zero" );
+      
+  fi;
+  
+  iota := ImageEmbedding( alpha );
+  
+  lambda := KernelLift( beta, iota );
+  
+  return CokernelObject( lambda );
+  
+end;
+
+IsBlueExact := function( A, S )
+	local r;
+	
+	r := A.rank( S );
+	
+	return ForAll( [ 0 .. r - 1 ], i -> ForAll( [ 0 .. r - 1 ], j -> IsZero( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) ) ) );
+end;
+
+IsBlueExact := function( A, S )
+	local r;
+	
+	r := A.rank( S );
+	
+	return ForAll( [ 0 .. r - 1 ], i -> ForAll( [ 0 .. r - 1 ], j -> IsZero( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) ) ) );
+end;
+
+OrlikSolomonBicomplexVerticalHomologyObject := function( A, S, i, j )
+  local alpha, beta, iota, lambda;
+  
+  alpha := OrlikSolomonBicomplexDifferential( A, S, i, j - 1, i, j );
+  beta := OrlikSolomonBicomplexDifferential( A, S, i, j, i, j + 1 );
+  
+  if not IsZero( PreCompose( alpha, beta ) ) then
+      
+      Error( "the composition of the given morphisms has to be zero" );
+      
+  fi;
+  
+  iota := ImageEmbedding( alpha );
+  
+  lambda := KernelLift( beta, iota );
+  
+  return CokernelObject( lambda );
+  
+end;
+
+IsRedExact := function( A, S )
+	local r;
+	
+	r := A.rank( S );
+	
+	return ForAll( [ 0 .. r - 1 ], i -> ForAll( [ 0 .. r - 1 ], j -> IsZero( OrlikSolomonBicomplexVerticalHomologyObject( A, S, i, j ) ) ) );
 end;

@@ -1,11 +1,13 @@
 LoadPackage( "MotivesForBiArrangements" );
 
 
-A := BlueMultizetaBiOS( [ 2 ] );;
-flats := Flats( A.matroid );; S := flats[Length( flats )][1];; PrintArray( OrlikSolomonBicomplexDimensions( A, S ) );
+A := BlueMultizetaBiOS( [ 5 ] );;
+PrintArray( OrlikSolomonBicomplexDimensions( A, A.Smin ) );
+IsBlueExact( A, A.Smin );
 
-B := RedMultizetaBiOS( [ 2 ] );;
-flats := Flats( A.matroid );; S := flats[Length( flats )][1];; PrintArray( OrlikSolomonBicomplexDimensions( A, S ) );
+B := RedMultizetaBiOS( [ 5 ] );;
+PrintArray( OrlikSolomonBicomplexDimensions( B, B.Smin ) );
+IsRedExact( B, B.Smin );
 
 UnderlyingMatrix( OrlikSolomonBicomplexDifferential( A, [ 1, 2, 3, 4, 5, 6 ], 0, 0, 0, 1 ) ) =
 Involution( UnderlyingMatrix( OrlikSolomonBicomplexDifferential( B, [ 1, 2, 3, 4, 5, 6 ], 1, 0, 0, 0 ) ) );
