@@ -22,6 +22,142 @@ InstallMethod( Matroid,
 
 end );
 
+InstallMethod( FlatsOfRankExtended,
+		[ IsMatroid, IsInt ],
+		
+	function( matroid, k )
+		local rank;
+		
+		rank := RankOfMatroid( matroid );
+		
+		if k < 0 or k > rank then
+			return [];
+		fi;
+		
+		return FlatsOfRank( matroid, k );
+end );
+
+DisplayColoring := function( m, chi )
+	local S;
+	for S in Concatenation( Flats( m ) ) do
+		Print( S, " ", chi( S ), "\n" );
+	od;
+end;
+
+InstallMethod( HasOrlikSolomonBicomplexObject,
+		[ IsRecord, IsList, IsInt, IsInt ],
+		
+	function( A, S, i, j )
+
+		return IsBound( A.(JoinStringsWithSeparator( [ S, i, j ] )) );
+
+end );
+
+InstallMethod( SetOrlikSolomonBicomplexObject,
+		[ IsRecord, IsList, IsInt, IsInt, IsCapCategoryObject ],
+		
+	function( A, S, i, j, V )
+		
+		A.(JoinStringsWithSeparator( [ S, i, j ] )) := V;
+		
+end );
+
+InstallMethod( OrlikSolomonBicomplexObject,
+		[ IsRecord, IsList, IsInt, IsInt ],
+		
+	function( A, Sigma, i, j )
+		local V, SS;
+		
+		if HasOrlikSolomonBicomplexObject( A, Sigma, i, j ) then
+			V := A.(JoinStringsWithSeparator( [ Sigma, i, j ] ));
+		elif i + j < A.rank( Sigma ) then
+			SS := Filtered( FlatsOfRankExtended( A.matroid, i + j ), S -> IsSubset( Sigma, S ) );
+			V := DirectSum( A.cat, List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j ) ) );
+			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
+		else
+			V := ZeroObject( A.cat );
+			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
+		fi;
+		
+		return V;
+end );
+
+InstallGlobalFunction( HasOrlikSolomonBicomplexDifferentialComponent,
+#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
+
+	function( A, S, i, j, T, k, l )
+
+		return IsBound( A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] )) );
+
+end );
+
+InstallGlobalFunction( SetOrlikSolomonBicomplexDifferentialComponent,
+#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt, IsCapCategoryMorphism ],
+
+	function( A, S, i, j, T, k, l, f )
+
+		A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] )) := f;
+		
+end );
+
+InstallGlobalFunction( OrlikSolomonBicomplexDifferentialComponent,
+#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
+		
+	function( A, S, i, j, T, k, l )
+		local V, W, f;
+		
+		if HasOrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l ) then
+			f := A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] ));
+		else
+			V := OrlikSolomonBicomplexObject( A, S, i, j );
+			W := OrlikSolomonBicomplexObject( A, T, k, l );
+			f := ZeroMorphism( V, W );
+			SetOrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l, f );
+		fi;
+
+		return f;
+end );
+
+InstallGlobalFunction( HasOrlikSolomonBicomplexDifferential,
+#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
+		
+	function( A, Sigma, i, j, k, l )
+
+		return IsBound( A.(JoinStringsWithSeparator( [ Sigma, i, j, k, l ] )) );
+				
+end );
+
+InstallGlobalFunction( SetOrlikSolomonBicomplexDifferential,
+#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt, IsCapCategoryMorphism ],
+		
+	function( A, Sigma, i, j, k, l, f )
+
+		A.(JoinStringsWithSeparator( [ Sigma, i, j, k, l ] )) := f;
+				
+end );
+
+InstallGlobalFunction( OrlikSolomonBicomplexDifferential,
+#		[ IsRecord, IsList, IsInt, IsInt, IsInt, IsInt ],
+		
+	function( A, Sigma, i, j, k, l )
+		local V, W, f, SS, TT;
+		
+		if HasOrlikSolomonBicomplexDifferential( A, Sigma, i, j, k, l ) then
+			f := A.(JoinStringsWithSeparator( [ Sigma, i, j, k, l ] ));
+		else
+            SS := Filtered( FlatsOfRankExtended( A.matroid, i + j ), S -> IsSubset( Sigma, S ) );
+            TT := Filtered( FlatsOfRankExtended( A.matroid, k + l ), T -> IsSubset( Sigma, T ) );
+			f := MorphismBetweenDirectSums(
+            	DirectSum( A.cat, List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j ) ) ),
+                List( SS, S -> List( TT, T -> OrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l ) ) ),
+                DirectSum( A.cat, List( TT, T -> OrlikSolomonBicomplexObject( A, T, k, l ) ) )
+ 			);
+			SetOrlikSolomonBicomplexDifferential( A, Sigma, i, j, k, l, f );
+		fi;
+
+		return f;
+end );
+
 ####################################
 #
 # methods for constructors:
@@ -30,148 +166,71 @@ end );
 
 ##
 InstallMethod( OrlikSolomonBicomplex,
-        [ IsMatroid, IsFunction ],
+        [ IsMatroid, IsFunction, IsCapCategory ],
         
-  function( m, chi )
-    local Q, zero, zeroId, one, oneId, A, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj, cat;
-    
-    Q := HomalgFieldOfRationals();
-    cat := LeftPresentations( Q );
-    
-    zero := ZeroObject( cat );
-    zeroId := IdentityMorphism( zero );
-    one := TensorUnit( cat );
-    oneId := IdentityMorphism( one );
-
+  function( m, chi, cat )
+    local A, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj;
 
     A := rec(
-             (JoinStringsWithSeparator( [ [ ], 0, 0 ] )) := one,
-             );
-
-    for Sigma in FlatsOfRank( m, 1 ) do
-        if chi( Sigma ) then
-            A.(JoinStringsWithSeparator( [ Sigma, 1, 0 ] )) := one;
-            A.(JoinStringsWithSeparator( [ Sigma, 0, 1 ] )) := zero;
-            A.(JoinStringsWithSeparator( [ [ ], 1, -1, Sigma, 1, 0 ] )) := ZeroMorphism( zero, one );
-            A.(JoinStringsWithSeparator( [ Sigma, 1, 0, [ ], 0, 0 ] )) := oneId;
-            A.(JoinStringsWithSeparator( [ [ ], 0, 0, Sigma, 0, 1 ] )) := ZeroMorphism( one, zero );
-            A.(JoinStringsWithSeparator( [ Sigma, 0, 1, [ ], -1, 1 ] )) := zeroId;
-        else
-            A.(JoinStringsWithSeparator( [ Sigma, 1, 0 ] )) := zero;
-            A.(JoinStringsWithSeparator( [ Sigma, 0, 1 ] )) := one;
-            A.(JoinStringsWithSeparator( [ [ ], 1, -1, Sigma, 1, 0 ] )) := zeroId;
-            A.(JoinStringsWithSeparator( [ Sigma, 1, 0, [ ], 0, 0 ] )) := ZeroMorphism( zero, one );
-            A.(JoinStringsWithSeparator( [ [ ], 0, 0, Sigma, 0, 1 ] )) := oneId;
-            A.(JoinStringsWithSeparator( [ Sigma, 0, 1, [ ], -1, 1 ] )) := ZeroMorphism( one, zero );
-        fi;
-    od;
-
+    		cat := cat,
+    		matroid := m,
+    		rank := RankFunction( m ),
+    		coloring := chi,
+             (JoinStringsWithSeparator( [ [ ], 0, 0 ] )) := TensorUnit( cat ),
+    		);
     
-    for k in [ 2 .. RankOfMatroid( m ) ] do
-        for Sigma in FlatsOfRank( m, k ) do
-            SS := Filtered( FlatsOfRank( m, k - 1 ), S -> IsSubset( Sigma, S ) );
-            TT := Filtered( FlatsOfRank( m, k - 2 ), T -> IsSubset( Sigma, T ) );
-            
-            for i in [ 1 .. k ] do
-                phi := List( SS, S -> List( TT,
-                               function( T )
-                               	 if not IsBound( A.(JoinStringsWithSeparator( [ S, i - 1, k - i ] )) ) then
-                               	 	A.(JoinStringsWithSeparator( [ S, i - 1, k - i ] )) := zero;
-                               	 fi;
-                               	 if not IsBound( A.(JoinStringsWithSeparator( [ T, i - 2, k - i ] )) ) then
-                               	 	A.(JoinStringsWithSeparator( [ T, i - 2, k - i ] )) := zero;
-                               	 fi;
-                                 if not IsBound( A.(JoinStringsWithSeparator( [ S, i - 1, k - i, T, i - 2, k - i ] )) ) then
-                                     A.(JoinStringsWithSeparator( [ S, i - 1, k - i, T, i - 2, k - i ] )) :=
-                                       ZeroMorphism( A.(JoinStringsWithSeparator( [ S, i - 1, k - i ] )),  A.(JoinStringsWithSeparator( [ T, i - 2, k - i ] )) );
-                                 fi;
-                                 return A.(JoinStringsWithSeparator( [ S, i - 1, k - i, T, i - 2, k - i ] ));
-                             end ) );
-                phi := MorphismBetweenDirectSums( phi );
-                A.(JoinStringsWithSeparator( [ Sigma, i - 1, k - i, i - 2, k - i ] )) := phi;
-            od;
-            
-            for i in [ 0 .. k - 1 ] do
-                phi := List( TT, T -> List( SS,
-                               function( S )
-                               	 if not IsBound( A.(JoinStringsWithSeparator( [ T, i, k - i - 2 ] )) ) then
-                               	 	A.(JoinStringsWithSeparator( [ T, i, k - i - 2 ] )) := zero;
-                               	 fi;
-                               	 if not IsBound( A.(JoinStringsWithSeparator( [ S, i, k - i - 1 ] )) ) then
-                               	 	A.(JoinStringsWithSeparator( [ S, i, k - i - 1 ] )) := zero;
-                               	 fi; 
-                               	 
-                                 if not IsBound( A.(JoinStringsWithSeparator( [ T, i, k - i - 2, S, i, k - i - 1 ] )) ) then
-                                     A.(JoinStringsWithSeparator( [ T, i, k - i - 2, S, i, k - i - 1 ] )) :=
-                                       ZeroMorphism( A.(JoinStringsWithSeparator( [ T, i, k - i - 2 ] )), A.(JoinStringsWithSeparator( [ S, i, k - i - 1 ] )) );
-                                 fi;
-                                 return A.(JoinStringsWithSeparator( [ T, i, k - i - 2, S, i, k - i - 1 ] ));
-                             end ) );
-                
-                phi := MorphismBetweenDirectSums( phi );
-                A.(JoinStringsWithSeparator( [ Sigma, i, k - i - 2, i, k - i - 1 ] )) := phi;
-            od;
+    for k in [ 1 .. RankOfMatroid( m ) ] do
+        for Sigma in FlatsOfRankExtended( m, k ) do
+
+            SS := Filtered( FlatsOfRankExtended( m, k - 1 ), S -> IsSubset( Sigma, S ) );
+            TT := Filtered( FlatsOfRankExtended( m, k - 2 ), T -> IsSubset( Sigma, T ) );
             
             if chi( Sigma ) then
                 for i in Reversed( [ 1 .. k ] ) do
-                    phi := A.(JoinStringsWithSeparator( [ Sigma, i - 1, k - i, i - 2, k - i ] ));
+                	phi := OrlikSolomonBicomplexDifferential( A, Sigma, i - 1, k - i, i - 2, k - i );
                     d := KernelEmbedding( phi );
-                    A.(JoinStringsWithSeparator( [ Sigma, i, k - i ] )) := Source( d );
-                    D := List( [ 1 .. Length( SS ) ], s -> A.(JoinStringsWithSeparator( [ SS[s], i - 1, k - i ] )) );
+                    SetOrlikSolomonBicomplexObject( A, Sigma, i, k - i, Source( d ) );
+                    D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i ) );
                     for s in [ 1 .. Length( SS ) ] do
-                        A.(JoinStringsWithSeparator( [ Sigma, i, k - i, SS[s], i - 1, k - i ] )) := PreCompose( d, ProjectionInFactorOfDirectSum( D, s ) );
+                    	SetOrlikSolomonBicomplexDifferentialComponent( A, Sigma, i, k - i, SS[s], i - 1, k - i, PreCompose( d, ProjectionInFactorOfDirectSum( D, s ) ) );
                     od;
                     if i < k then
-                        D := List( [ 1 .. Length( SS ) ], s -> A.(JoinStringsWithSeparator( [ SS[s], i, k - i - 1 ] )) );
+                        D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 ) );
                         psi := PreCompose(
-                                       A.(JoinStringsWithSeparator( [ Sigma, i, k - i - 1, i - 1, k - i - 1 ] )),
-                                       A.(JoinStringsWithSeparator( [ Sigma, i - 1, k - i - 1, i - 1, k - i ] )) );
-                        
+                                       OrlikSolomonBicomplexDifferential( A, Sigma, i, k - i - 1, i - 1, k - i - 1 ),
+                                       OrlikSolomonBicomplexDifferential( A, Sigma, i - 1, k - i - 1, i - 1, k - i )
+                        );
                         psi := KernelLift( phi, psi );
                         for s in [ 1 .. Length( SS ) ] do
-                            A.(JoinStringsWithSeparator( [ SS[s], i, k - i - 1, Sigma, i, k - i ] )) :=
-                              PreCompose( InjectionOfCofactorOfDirectSum( D, s ), psi );
+                            SetOrlikSolomonBicomplexDifferentialComponent(
+                            	A, SS[s], i, k - i - 1, Sigma, i, k - i, PreCompose( InjectionOfCofactorOfDirectSum( D, s ), psi )
+                            );
                         od;
                     fi;
-                od;
-                A.(JoinStringsWithSeparator( [ Sigma, 0, k ] )) := zero;
-                obj := A.(JoinStringsWithSeparator( [ Sigma, k, 0 ] )); ###
-                for S in SS do
-                	A.(JoinStringsWithSeparator( [ Sigma, 0, k, S, -1, k ] )) := zeroId;
-                	phi := UniversalMorphismFromZeroObject( obj );
-                	A.(JoinStringsWithSeparator( [ S, k, -1, Sigma, k, 0 ] )) := phi;
                 od;
             else
-                for i in [ 1 .. k ] do
-                    phi := A.(JoinStringsWithSeparator( [ Sigma, i, k - i - 2, i, k - i - 1 ] ));
+                for i in [ 0 .. k - 1] do
+                    phi := OrlikSolomonBicomplexDifferential( A, Sigma, i, k - i - 2, i, k - i - 1 );
                     d := CokernelProjection( phi );
-                    A.(JoinStringsWithSeparator( [ Sigma, i, k - i ] )) := Range( d );
-                    D := List( [ 1 .. Length( SS ) ], s -> A.(JoinStringsWithSeparator( [ SS[s], i, k - i - 1 ] )) );
+                    SetOrlikSolomonBicomplexObject( A, Sigma, i, k - i, Range( d ) ); #Error("");
+                    D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 ) ); #Error("");
                     for s in [ 1 .. Length( SS ) ] do
-                        A.(JoinStringsWithSeparator( [ SS[s], i, k - i - 1, Sigma, i, k - i ] )) := PreCompose( InjectionOfCofactorOfDirectSum( D, s ), d );
-                    od;
-                    if i > 1 then
-                        D := List( [ 1 .. Length( SS ) ], s -> A.(JoinStringsWithSeparator( [ SS[s], i - 1, k - i ] )) );
+                        SetOrlikSolomonBicomplexDifferentialComponent( A, SS[s], i, k - i - 1, Sigma, i, k - i, PreCompose( InjectionOfCofactorOfDirectSum( D, s ), d ) );
+                    od; #Error("");
+                    if i > 0 then
+                        D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i ) );
                         psi := PreCompose(
-                                       A.(JoinStringsWithSeparator( [ Sigma, i, k - i - 1, i - 1, k - i - 1 ] )),
-                                       A.(JoinStringsWithSeparator( [ Sigma, i - 1, k - i - 1, i - 1, k - i ] )) );
-                        
+                                       OrlikSolomonBicomplexDifferential( A, Sigma, i, k - i - 1, i - 1, k - i - 1 ),
+                                       OrlikSolomonBicomplexDifferential( A, Sigma, i - 1, k - i - 1, i - 1, k - i )
+                        );
                         psi := CokernelColift( phi, psi );
                         for s in [ 1 .. Length( SS ) ] do
-                            A.(JoinStringsWithSeparator( [ Sigma, i, k - i, SS[s], i - 1, k - i ] )) :=
-                              PreCompose( psi, ProjectionInFactorOfDirectSum( D, s ) );
+                            SetOrlikSolomonBicomplexDifferentialComponent(
+                            	A, Sigma, i, k - i, SS[s], i - 1, k - i, PreCompose( psi, ProjectionInFactorOfDirectSum( D, s ) )
+                            );
                         od;
                     fi;
                 od;
-                A.(JoinStringsWithSeparator( [ Sigma, k, 0 ] )) := zero;
-                obj := A.(JoinStringsWithSeparator( [ Sigma, 0, k ] )); ###
-#                obj := A.(JoinStringsWithSeparator( [ Sigma, 0, k ] )); ###
-                for S in SS do
-                	A.(JoinStringsWithSeparator( [ S, k, -1, Sigma, k, 0 ] )) := zeroId;
-                	phi := UniversalMorphismIntoZeroObject( obj );
-                	A.(JoinStringsWithSeparator( [ Sigma, 0, k, S, -1, k ] )) := phi;
-                od;
-
             fi;
         od;
     od;
@@ -179,3 +238,206 @@ InstallMethod( OrlikSolomonBicomplex,
     return A;
     
 end );
+
+InstallMethod( OrlikSolomonBicomplex,
+        [ IsMatroid, IsFunction ],
+        
+	function( m, chi )
+	
+		return OrlikSolomonBicomplex( m, chi, MatrixCategory( HomalgFieldOfRationals() ) );
+
+end );
+
+SimplexArrangement := function( n )
+	local res, i, j;
+	
+	res := [ ];
+	
+	
+	for i in [ 1 .. n + 1 ] do
+		res[i] := [ ];
+		for j in [ 1 .. n + 1 ] do
+			res[i][j] := 0;
+		od;
+	od;
+
+	res[1][2] := 1;
+
+	for i in [ 2 .. n ] do
+		res[i][i] := 1;
+		res[i][i + 1] := -1;
+	od;
+	
+	res[n + 1][1] := -1;
+	res[n + 1][n + 1] := 1;
+	
+	return res;
+end;
+
+Multizeta01Word := function( ni_list )
+	local res, n, j;
+	res := [ ];
+	for n in ni_list do
+		Add( res, 1 );
+		for j in [ 1 .. n - 1 ] do
+			Add( res, 0 );
+		od;
+	od;
+	return res;
+end;
+
+IteratedIntegralBlueArrangement := function( a ) 			# a is the list of a_i's
+	local n, res, i, j;
+	
+	n := Length( a );
+	
+	res := [];
+	
+	for i in [ 1 .. n + 1 ] do
+		res[i] := [];
+		for j in [ 1 .. n + 1 ] do
+			res[i][j] := 0;
+		od;
+	od;
+	
+	res[1][1] := 1;
+	
+	for i in [ 2 .. n + 1] do
+		res[i][1] := a[i - 1];
+		res[i][i] := -1;
+	od;
+	
+	return res;
+end;
+
+MultizetaBlueArrangement := function( ni_list )
+	return IteratedIntegralBlueArrangement( Multizeta01Word ( ni_list ) );
+end;
+
+RedMultizetaBiOS := function( ni_list )
+	local Q, n, m, rk, chi;
+	
+	Q := HomalgFieldOfRationals( );
+	n := Sum( ni_list );
+	
+	m := Concatenation( MultizetaBlueArrangement( ni_list ), SimplexArrangement( n ) );
+	m := Matroid( m, Q );
+	rk := RankFunction( m );
+	
+	chi := function( flat )
+#		return not ForAll( flat, i -> i > n + 1 );
+		return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
+	end;
+	
+	return OrlikSolomonBicomplex( m, chi );
+end;
+
+BlueMultizetaBiOS := function( ni_list )
+	local Q, n, m, rk, chi;
+	
+	Q := HomalgFieldOfRationals( );
+	n := Sum( ni_list );
+	
+	m := Concatenation( MultizetaBlueArrangement( ni_list ), SimplexArrangement( n ) );
+	m := Matroid( m, Q );
+	rk := RankFunction( m );
+	
+	chi := function( flat )
+		if rk( flat ) = n + 1 then
+			return true;
+		else
+			return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
+		fi;
+	end;
+	
+	return OrlikSolomonBicomplex( m, chi );
+end;
+
+OrlikSolomonBicomplexDimensions := function( A, Sigma )
+	local r, res, i, j;
+	
+	r := A.rank( Sigma );
+	
+	res := [];
+	for i in [ 0 .. r ] do
+		res[i + 1] := [];
+		for j in [ 0 .. r - i ] do
+			res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexObject( A, Sigma, i, j ) );
+		od;
+		for j in [ r - i + 1 .. r ] do
+			res[i + 1][j + 1] := 0;
+		od;
+	od;
+	return res;
+end;
+
+OrlikSolomonBicomplexDifferentials := function( A, Sigma )
+	local r, hor, ver, i, j;
+	
+	r := A.rank( Sigma );
+
+	hor := [];
+	for i in [ 0 .. r - 1] do
+		hor[i + 1] := [];
+		for j in [ 0 .. r ] do
+			hor[i + 1][j + 1] := OrlikSolomonBicomplexDifferential( A, Sigma, r - i, j, r - i - 1, j );
+		od;
+	od;
+	
+	ver := [];
+	for i in [ 0 .. r ] do
+		ver[i + 1] := [];
+		for j in [ 0 .. r - 1 ] do
+			ver[i + 1][j + 1] := OrlikSolomonBicomplexDifferential( A, Sigma, r - i, j, r - i, j + 1 );
+			Print( "\n" );		od;
+	od;
+	
+	return rec( hor := hor, ver := ver );
+end;
+
+# DisplayOrlikSolomonBicomplexDifferentials := function( A, Sigma )
+# 	local record, hor, ver, i, j;
+# 	
+# 	record := OrlikSolomonBicomplexDifferentials( A, Sigma );
+# 
+# 	hor := [];	
+# 	for i in [ 1 .. Length( record.hor ) ] do
+# 		hor[i] := [];
+# 		for j in [ 1 .. Length( record.hor[i] ) ] do
+# 			hor[i][j] := UnderlyingMatrix( record.hor[i][j] );
+# 		od; 
+# 	od;
+# 	
+# 	ver := [];	
+# 	for i in [ 1 .. Length( record.ver ) ] do
+# 		ver[i] := [];
+# 		for j in [ 1 .. Length( record.ver[i] ) ] do
+# 			ver[i][j] := UnderlyingMatrix( record.ver[i][j] );
+# 		od; 
+# 	od;
+# 	
+# 	Print(hor);
+# 	Print(ver);
+# 	
+# end;
+
+DisplayOrlikSolomonBicomplexDifferentials := function( A, Sigma )
+	local r, i, j;
+	
+	r := A.rank( Sigma );
+
+	for j in [ 0 .. r - 1 ] do
+		for i in [ 0 .. r - j - 1 ] do
+			Print( JoinStringsWithSeparator( [ i + 1, j, i, j ] ), "\n");
+			Display( OrlikSolomonBicomplexDifferential( A, Sigma, i + 1, j, i, j ) );
+			Print( "\n" );
+		od;
+	od;
+	
+	for i in [ 0 .. r - 1 ] do
+		for j in [ 0 .. r - i - 1 ] do
+			Print( JoinStringsWithSeparator( [ i, j, i, j + 1 ] ), "\n");
+			Display( OrlikSolomonBicomplexDifferential( A, Sigma, i, j, i, j + 1 ) );
+			Print( "\n" );		od;
+	od;
+end;
