@@ -73,10 +73,10 @@ InstallMethod( OrlikSolomonBicomplexObject,
 		elif i + j < A.rank( Sigma ) then
 			SS := Filtered( FlatsOfRankExtended( A.matroid, i + j ), S -> IsSubset( Sigma, S ) );
 			V := DirectSum( A.cat, List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j ) ) );
-			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
+#			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
 		else
 			V := ZeroObject( A.cat );
-			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
+#			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
 		fi;
 		
 		return V;
@@ -112,7 +112,7 @@ InstallGlobalFunction( OrlikSolomonBicomplexDifferentialComponent,
 			V := OrlikSolomonBicomplexObject( A, S, i, j );
 			W := OrlikSolomonBicomplexObject( A, T, k, l );
 			f := ZeroMorphism( V, W );
-			SetOrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l, f );
+#			SetOrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l, f );
 		fi;
 
 		return f;
@@ -152,7 +152,7 @@ InstallGlobalFunction( OrlikSolomonBicomplexDifferential,
                 List( SS, S -> List( TT, T -> OrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l ) ) ),
                 DirectSum( A.cat, List( TT, T -> OrlikSolomonBicomplexObject( A, T, k, l ) ) )
  			);
-			SetOrlikSolomonBicomplexDifferential( A, Sigma, i, j, k, l, f );
+#			SetOrlikSolomonBicomplexDifferential( A, Sigma, i, j, k, l, f );
 		fi;
 
 		return f;
@@ -215,11 +215,11 @@ InstallMethod( OrlikSolomonBicomplex,
                 for i in [ 0 .. k - 1] do
                     phi := OrlikSolomonBicomplexDifferential( A, Sigma, i, k - i - 2, i, k - i - 1 );
                     d := CokernelProjection( phi );
-                    SetOrlikSolomonBicomplexObject( A, Sigma, i, k - i, Range( d ) ); #Error("");
-                    D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 ) ); #Error("");
+                    SetOrlikSolomonBicomplexObject( A, Sigma, i, k - i, Range( d ) );
+                    D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 ) );
                     for s in [ 1 .. Length( SS ) ] do
                         SetOrlikSolomonBicomplexDifferentialComponent( A, SS[s], i, k - i - 1, Sigma, i, k - i, PreCompose( InjectionOfCofactorOfDirectSum( D, s ), d ) );
-                    od; #Error("");
+                    od;
                     if i > 0 then
                         D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i ) );
                         psi := PreCompose(
@@ -317,44 +317,89 @@ MultizetaBlueArrangement := function( ni_list )
 	return IteratedIntegralBlueArrangement( Multizeta01Word ( ni_list ) );
 end;
 
-RedMultizetaBiOS := function( ni_list )
-	local Q, n, m, rk, chi;
+# RedMultizetaBiOS := function( ni_list, cat )
+# 	local Q, n, m, rk, chi;
+# 	
+# 	Q := HomalgFieldOfRationals( );
+# 	n := Sum( ni_list );
+# 	
+# 	m := Concatenation( MultizetaBlueArrangement( ni_list ), SimplexArrangement( n ) );
+# 	m := Matroid( m, Q );
+# 	rk := RankFunction( m );
+# 	
+# 	chi := function( flat )
+# #		return not ForAll( flat, i -> i > n + 1 );
+# 		return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
+# 	end;
+# 	
+# 	return OrlikSolomonBicomplex( m, chi, cat );
+# end;
+
+InstallMethod( RedMultizetaBiOS,
+        [ IsList, IsCapCategory ],
+        
+	function( ni_list, cat )
+
+		local Q, n, m, rk, chi;
 	
-	Q := HomalgFieldOfRationals( );
-	n := Sum( ni_list );
+		Q := HomalgFieldOfRationals( );
+		n := Sum( ni_list );
 	
-	m := Concatenation( MultizetaBlueArrangement( ni_list ), SimplexArrangement( n ) );
-	m := Matroid( m, Q );
-	rk := RankFunction( m );
+		m := Concatenation( MultizetaBlueArrangement( ni_list ), SimplexArrangement( n ) );
+		m := Matroid( m, Q );
+		rk := RankFunction( m );
 	
-	chi := function( flat )
-#		return not ForAll( flat, i -> i > n + 1 );
+		chi := function( flat )
 		return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
 	end;
 	
-	return OrlikSolomonBicomplex( m, chi );
-end;
+	return OrlikSolomonBicomplex( m, chi, cat );
+	
+end );
 
-BlueMultizetaBiOS := function( ni_list )
-	local Q, n, m, rk, chi;
+InstallMethod( RedMultizetaBiOS,
+        [ IsList ],
+        
+	function( ni_list )
 	
-	Q := HomalgFieldOfRationals( );
-	n := Sum( ni_list );
+		return RedMultizetaBiOS( ni_list, MatrixCategory( HomalgFieldOfRationals() ) );
+
+end );
+
+InstallMethod( BlueMultizetaBiOS,
+		[ IsList, IsCapCategory ],
+
+	function( ni_list, cat )
+
+		local Q, n, m, rk, chi;
+		
+		Q := HomalgFieldOfRationals( );
+		n := Sum( ni_list );
+		
+		m := Concatenation( MultizetaBlueArrangement( ni_list ), SimplexArrangement( n ) );
+		m := Matroid( m, Q );
+		rk := RankFunction( m );
+		
+		chi := function( flat )
+			if rk( flat ) = n + 1 then
+				return true;
+			else
+				return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
+			fi;
+		end;
+		
+		return OrlikSolomonBicomplex( m, chi, cat );
+
+end );
+
+InstallMethod( BlueMultizetaBiOS,
+        [ IsList ],
+        
+	function( ni_list )
 	
-	m := Concatenation( MultizetaBlueArrangement( ni_list ), SimplexArrangement( n ) );
-	m := Matroid( m, Q );
-	rk := RankFunction( m );
-	
-	chi := function( flat )
-		if rk( flat ) = n + 1 then
-			return true;
-		else
-			return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
-		fi;
-	end;
-	
-	return OrlikSolomonBicomplex( m, chi );
-end;
+		return BlueMultizetaBiOS( ni_list, MatrixCategory( HomalgFieldOfRationals() ) );
+
+end );
 
 OrlikSolomonBicomplexDimensions := function( A, Sigma )
 	local r, res, i, j;

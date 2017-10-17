@@ -41,3 +41,14 @@ DeclareGlobalFunction( "SetOrlikSolomonBicomplexDifferential" );
 
 DeclareGlobalFunction( "OrlikSolomonBicomplexDifferential" );
 
+DeclareOperation( "RedMultizetaBiOS",
+        [ IsList, IsCapCategory ] );
+
+DeclareOperation( "RedMultizetaBiOS",
+        [ IsList ] );
+
+DeclareOperation( "BlueMultizetaBiOS",
+        [ IsList, IsCapCategory ] );
+
+DeclareOperation( "BlueMultizetaBiOS",
+        [ IsList ] );
