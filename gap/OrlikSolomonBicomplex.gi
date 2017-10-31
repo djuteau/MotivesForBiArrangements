@@ -167,7 +167,7 @@ end );
 ##
 InstallMethod( OrlikSolomonBicomplex,
         [ IsMatroid, IsFunction, IsCapCategory ],
-        
+
   function( m, chi, cat )
     local A, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj;
 
@@ -179,9 +179,9 @@ InstallMethod( OrlikSolomonBicomplex,
     		coloring := chi,
              (JoinStringsWithSeparator( [ [ ], 0, 0 ] )) := TensorUnit( cat ),
     		);
-    		
+
     A.Smin := A.flats[Length( A.flats )][1];
-    
+
     for k in [ 1 .. RankOfMatroid( m ) ] do
         for Sigma in FlatsOfRankExtended( m, k ) do
 
@@ -251,6 +251,112 @@ InstallMethod( OrlikSolomonBicomplex,
 
 end );
 
+InstallMethod( ProjectiveOrlikSolomonBicomplex,
+        [ IsMatroid, IsFunction, IsCapCategory ],
+
+	function( m, chi, cat )
+		local ;
+		
+		A := OrlikSolomonBicomplex( m, chi, cat );
+		
+		
+
+end );
+
+InstallMethod( GradedCohomologyOfProjectiveBiarrangement,
+		[ IsRecord ],
+
+	GradedCohomologyOfProjectiveBiarrangement := function( A )
+		local n, betti, k, B, i, j;
+		
+		n := RankOfMatroid( A.matroid ) - 1;
+		
+		betti := [];
+				
+		for k in [ 0 .. n ] do
+			B := DoubleCochainComplex(
+				A.cat,
+				function( i, j )
+					if i < -k - 1 or i > 0 then
+						return IdentityMorphism( ZeroObject( A.cat ) );
+					elif i = -k - 1 then
+						return UniversalMorphismFromZeroObject( OrlikSolomonBicomplexObject( A, A.Smin, k, j ) );
+					elif i = 0 then
+						return UniversalMorphismIntoZeroObject( OrlikSolomonBicomplexObject( A, A.Smin, 0, j ) );
+					else
+						return OrlikSolomonBicomplexDifferential( A, A.Smin, -i, j, -i - 1, j );
+					fi;
+				end,
+				function( i, j )
+					if j < -1 or j > n - k then
+						return  ZeroMorphism( A.cat );
+					elif j = -1 then
+						return UniversalMorphismFromZeroObject( OrlikSolomonBicomplexObject( A, A.Smin, -i, 0 ) );
+					elif j = n - k then
+						return UniversalMorphismIntoZeroObject( OrlikSolomonBicomplexObject( A, A.Smin, -i, n - k ) );
+					else
+						return ( -1 )^j * OrlikSolomonBicomplexDifferential( A, A.Smin, -i, j, -i, j + 1 );
+					fi;
+				end
+			);
+			
+		SetAboveBound( B, n - k + 1 );
+		SetBelowBound( B, -1 );
+		SetRightBound( B, 1 );
+		SetLeftBound( B, -k - 1 );
+		
+#		Error( "" );
+
+		B := TotalCochainComplex( B );
+		
+		betti[k] := List( [ -k, n - k ], i -> Dimension( DefectOfExactnessAt( B, i ) ) );
+
+		od;
+		
+		return betti;
+		
+end );
+
+
+
+InstallMethod( OrlikSolomonBicomplex,
+		[ IsRecord, IsList ],
+
+	function( A, S ) 
+		local i, j;
+		
+		if IsBound( A.( String( S ) ) ) then
+			return A.( String( S ) );
+		fi;
+
+		A.( String( S ) ) := DoubleCochainComplex(
+			A.cat,
+			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i - 1, j ); end,
+			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i, j + 1 ); end
+		);
+
+	return A.( String( S ) );
+end ); 
+
+InstallMethod( OrlikSolomonBicomplex,
+		[ IsRecord, IsList ],
+
+	function( A, S ) 
+		local i, j;
+		
+		if IsBound( A.( String( S ) ) ) then
+			return A.( String( S ) );
+		fi;
+
+		A.( String( S ) ) := DoubleCochainComplex(
+			A.cat,
+			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i - 1, j ); end,
+			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i, j + 1 ); end
+		);
+
+	return A.( String( S ) );
+end ); 
+
 SimplexArrangement := function( n )
 	local res, i, j;
 	
@@ -313,6 +419,51 @@ IteratedIntegralBlueArrangement := function( a ) 			# a is the list of a_i's
 	return res;
 end;
 
+CellIntegralBlueArrangement := function( n, w )
+	local res, i, j, a, b, c;
+	
+	res := [];
+	
+	for i in [ 1 .. n - 2 ] do
+		res[i] := [];
+		for j in [ 1 .. n -2 ] do
+			res[i][j] := 0;
+		od;
+	od;
+	
+	c := 1;
+	
+	for i in [ 1 .. n ] do
+		a := i^w;
+		if i = n then
+			b := 1^w;
+		else
+			b := ( i + 1 )^w;
+		od;
+		
+		if a in [ 1 .. n - 3 ] then
+			if b in [ 1 .. n - 3 ] then
+				res[c][a + 1] := 1;
+				res[c][b + 1] := -1;
+				c := c + 1;
+			elif b = n - 2 then
+				res[c][a + 1] := 1;
+				res[c][1] := -1;
+				c := c + 1;
+			elif b = n then
+				res[c][a + 1] := 1;
+				c := c + 1;
+			fi;
+		elif a = n - 2 then
+			if b in [ 1 .. n - 3 ] then
+				res[c][1] := 1;
+				res[c][b + 1] := -1;
+				c := c + 1;
+			fi;
+		fi;
+	od;
+end;
+
 MultizetaBlueArrangement := function( ni_list )
 	return IteratedIntegralBlueArrangement( Multizeta01Word ( ni_list ) );
 end;
@@ -350,8 +501,8 @@ InstallMethod( RedMultizetaBiOS,
 		rk := RankFunction( m );
 	
 		chi := function( flat )
-		return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
-	end;
+			return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
+		end;
 	
 	return OrlikSolomonBicomplex( m, chi, cat );
 	
@@ -553,3 +704,6 @@ IsRedExact := function( A, S )
 	
 	return ForAll( [ 0 .. r - 1 ], i -> ForAll( [ 0 .. r - 1 ], j -> IsZero( OrlikSolomonBicomplexVerticalHomologyObject( A, S, i, j ) ) ) );
 end;
+
+
+

@@ -19,6 +19,9 @@ DeclareOperation( "OrlikSolomonBicomplex",
 
 DeclareOperation( "OrlikSolomonBicomplex",
         [ IsMatroid, IsFunction ] );
+        
+DeclareOperation( "OrlikSolomonBicomplex",
+        [ IsRecord, IsList ] );
 
 DeclareOperation( "HasOrlikSolomonBicomplexObject",
 		[ IsRecord, IsList, IsInt, IsInt ] );
