@@ -183,7 +183,10 @@ InstallMethod( OrlikSolomonBicomplex,
     A.Smin := A.flats[Length( A.flats )][1];
 
     for k in [ 1 .. RankOfMatroid( m ) ] do
+    	Print( "\nk = ", k, "\n" );
         for Sigma in FlatsOfRankExtended( m, k ) do
+        	
+        	Print( "." );
 
             SS := Filtered( FlatsOfRankExtended( m, k - 1 ), S -> IsSubset( Sigma, S ) );
             TT := Filtered( FlatsOfRankExtended( m, k - 2 ), T -> IsSubset( Sigma, T ) );
@@ -251,71 +254,71 @@ InstallMethod( OrlikSolomonBicomplex,
 
 end );
 
-InstallMethod( ProjectiveOrlikSolomonBicomplex,
-        [ IsMatroid, IsFunction, IsCapCategory ],
-
-	function( m, chi, cat )
-		local ;
-		
-		A := OrlikSolomonBicomplex( m, chi, cat );
-		
-		
-
-end );
-
-InstallMethod( GradedCohomologyOfProjectiveBiarrangement,
-		[ IsRecord ],
-
-	GradedCohomologyOfProjectiveBiarrangement := function( A )
-		local n, betti, k, B, i, j;
-		
-		n := RankOfMatroid( A.matroid ) - 1;
-		
-		betti := [];
-				
-		for k in [ 0 .. n ] do
-			B := DoubleCochainComplex(
-				A.cat,
-				function( i, j )
-					if i < -k - 1 or i > 0 then
-						return IdentityMorphism( ZeroObject( A.cat ) );
-					elif i = -k - 1 then
-						return UniversalMorphismFromZeroObject( OrlikSolomonBicomplexObject( A, A.Smin, k, j ) );
-					elif i = 0 then
-						return UniversalMorphismIntoZeroObject( OrlikSolomonBicomplexObject( A, A.Smin, 0, j ) );
-					else
-						return OrlikSolomonBicomplexDifferential( A, A.Smin, -i, j, -i - 1, j );
-					fi;
-				end,
-				function( i, j )
-					if j < -1 or j > n - k then
-						return  ZeroMorphism( A.cat );
-					elif j = -1 then
-						return UniversalMorphismFromZeroObject( OrlikSolomonBicomplexObject( A, A.Smin, -i, 0 ) );
-					elif j = n - k then
-						return UniversalMorphismIntoZeroObject( OrlikSolomonBicomplexObject( A, A.Smin, -i, n - k ) );
-					else
-						return ( -1 )^j * OrlikSolomonBicomplexDifferential( A, A.Smin, -i, j, -i, j + 1 );
-					fi;
-				end
-			);
-			
-		SetAboveBound( B, n - k + 1 );
-		SetBelowBound( B, -1 );
-		SetRightBound( B, 1 );
-		SetLeftBound( B, -k - 1 );
-		
-#		Error( "" );
-
-		B := TotalCochainComplex( B );
-		
-		betti[k] := List( [ -k, n - k ], i -> Dimension( DefectOfExactnessAt( B, i ) ) );
-
-		od;
-		
-		return betti;
-		
-end );
+# InstallMethod( ProjectiveOrlikSolomonBicomplex,
+#         [ IsMatroid, IsFunction, IsCapCategory ],
+# 
+# 	function( m, chi, cat )
+# 		local ;
+# 		
+# 		A := OrlikSolomonBicomplex( m, chi, cat );
+# 		
+# 		
+# 
+# end );
+# 
+# InstallMethod( GradedCohomologyOfProjectiveBiarrangement,
+# 		[ IsRecord ],
+# 
+# 	GradedCohomologyOfProjectiveBiarrangement := function( A )
+# 		local n, betti, k, B, i, j;
+# 		
+# 		n := RankOfMatroid( A.matroid ) - 1;
+# 		
+# 		betti := [];
+# 				
+# 		for k in [ 0 .. n ] do
+# 			B := DoubleCochainComplex(
+# 				A.cat,
+# 				function( i, j )
+# 					if i < -k - 1 or i > 0 then
+# 						return IdentityMorphism( ZeroObject( A.cat ) );
+# 					elif i = -k - 1 then
+# 						return UniversalMorphismFromZeroObject( OrlikSolomonBicomplexObject( A, A.Smin, k, j ) );
+# 					elif i = 0 then
+# 						return UniversalMorphismIntoZeroObject( OrlikSolomonBicomplexObject( A, A.Smin, 0, j ) );
+# 					else
+# 						return OrlikSolomonBicomplexDifferential( A, A.Smin, -i, j, -i - 1, j );
+# 					fi;
+# 				end,
+# 				function( i, j )
+# 					if j < -1 or j > n - k then
+# 						return  ZeroMorphism( A.cat );
+# 					elif j = -1 then
+# 						return UniversalMorphismFromZeroObject( OrlikSolomonBicomplexObject( A, A.Smin, -i, 0 ) );
+# 					elif j = n - k then
+# 						return UniversalMorphismIntoZeroObject( OrlikSolomonBicomplexObject( A, A.Smin, -i, n - k ) );
+# 					else
+# 						return ( -1 )^j * OrlikSolomonBicomplexDifferential( A, A.Smin, -i, j, -i, j + 1 );
+# 					fi;
+# 				end
+# 			);
+# 			
+# 		SetAboveBound( B, n - k + 1 );
+# 		SetBelowBound( B, -1 );
+# 		SetRightBound( B, 1 );
+# 		SetLeftBound( B, -k - 1 );
+# 		
+# #		Error( "" );
+# 
+# 		B := TotalCochainComplex( B );
+# 		
+# 		betti[k] := List( [ -k, n - k ], i -> Dimension( DefectOfExactnessAt( B, i ) ) );
+# 
+# 		od;
+# 		
+# 		return betti;
+# 		
+# end );
 
 
 
