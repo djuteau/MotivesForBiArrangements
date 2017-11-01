@@ -1,0 +1,9 @@
+LoadPackage( "mot" );
+
+A8 := BrownMotiveBlue( 8 );;
+PrintArray( OrlikSolomonBicomplexDimensions( A8, A8.Smin ) );
+IsBlueExact( A8, A8.Smin );
+
+B8 := BrownMotive( 8 );;
+PrintArray( OrlikSolomonBicomplexDimensions( B8, B8.Smin ) );
+IsRedExact( B8, B8.Smin );
