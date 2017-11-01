@@ -377,8 +377,8 @@ SimplexArrangement := function( n )
 		res[i][i + 1] := -1;
 	od;
 	
-	res[n + 1][1] := -1;
-	res[n + 1][n + 1] := 1;
+	res[n + 1][1] := 1;
+	res[n + 1][n + 1] := -1;
 	
 	return res;
 end;
@@ -426,12 +426,14 @@ CellIntegralBlueArrangement := function( n, w )
 	
 	for i in [ 1 .. n - 2 ] do
 		res[i] := [];
-		for j in [ 1 .. n -2 ] do
+		for j in [ 1 .. n - 2 ] do
 			res[i][j] := 0;
 		od;
 	od;
 	
-	c := 1;
+	res[1][1] := 1;
+	
+	c := 2;
 	
 	for i in [ 1 .. n ] do
 		a := i^w;
@@ -439,7 +441,7 @@ CellIntegralBlueArrangement := function( n, w )
 			b := 1^w;
 		else
 			b := ( i + 1 )^w;
-		od;
+		fi;
 		
 		if a in [ 1 .. n - 3 ] then
 			if b in [ 1 .. n - 3 ] then
@@ -460,8 +462,108 @@ CellIntegralBlueArrangement := function( n, w )
 				res[c][b + 1] := -1;
 				c := c + 1;
 			fi;
+		elif a = n then
+			if b in [ 1 .. n - 3 ] then
+				res[c][b + 1] := -1;
+				c := c + 1;
+			fi;
 		fi;
 	od;
+	
+	return res;
+end;
+
+BrownMotive := function( n )
+	local L, M, matroid, chi, cat, c, rk;
+
+	L := List( Combinations( [ 1.. n - 2 ], 2 ), function( c ) local res; res := List( [ 1 .. n - 2 ], i -> 0 ); res{ c } := [ 1, - 1 ]; return res; end );
+	Append( L, List( [ 1 .. n - 2 ], function( c ) local res; res := List( [ 1 .. n - 2 ], i -> 0 ); res[c] := 1; return res; end ) );
+	L := Set( L );
+	M := SimplexArrangement( n - 3 );
+	L := Difference( L, M );
+
+	matroid := Matroid( Concatenation( L, M ), HomalgFieldOfRationals( ) );
+	rk := RankFunction( matroid );
+	
+	chi := function( flat )
+		return not rk( flat ) = Length( Filtered( flat, i -> i > Length( L ) ) );
+	end;
+
+	cat := MatrixCategory ( HomalgFieldOfRationals( ) );
+
+#	Print( "L = "); PrintArray( L ); Print( "\n" );
+#	Print( "M = "); PrintArray( M ); Print( "\n" );
+
+#	return Concatenation( L, M );
+	return OrlikSolomonBicomplex( matroid, chi, cat );
+end;
+
+BrownMotiveBlue := function( n )
+	local L, M, matroid, chi, cat, c, rk, A;
+
+	L := List( Combinations( [ 1.. n - 2 ], 2 ), function( c ) local res; res := List( [ 1 .. n - 2 ], i -> 0 ); res{ c } := [ 1, - 1 ]; return res; end );
+	Append( L, List( [ 1 .. n - 2 ], function( c ) local res; res := List( [ 1 .. n - 2 ], i -> 0 ); res[c] := 1; return res; end ) );
+	L := Set( L );
+	M := SimplexArrangement( n - 3 );
+	L := Difference( L, M );
+
+	matroid := Matroid( Concatenation( L, M ), HomalgFieldOfRationals( ) );
+	rk := RankFunction( matroid );
+	
+	chi := function( flat )
+		if flat = [ 1 .. Length( Flats( matroid )[2] ) ] then
+			return true;
+		else
+			return not rk( flat ) = Length( Filtered( flat, i -> i > Length( L ) ) );
+		fi;
+	end;
+
+	cat := MatrixCategory ( HomalgFieldOfRationals( ) );
+	
+	A := OrlikSolomonBicomplex( matroid, chi, cat );	
+	A.L := L;
+	A.M := M;
+
+	return A;
+#	return OrlikSolomonBicomplex( matroid, chi, cat );
+end;
+
+CellIntegralRedBiOS := function( n, w )
+		local m, rk, i, chi, cat;
+		
+		cat := MatrixCategory ( HomalgFieldOfRationals( ) );
+	
+		m := Concatenation( CellIntegralBlueArrangement( n, w ), SimplexArrangement( n - 3 ) );
+		m := Matroid( m, HomalgFieldOfRationals( ) );
+		rk := RankFunction( m );
+	
+		chi := function( flat )
+			return not rk( flat ) = Length( Filtered( flat, i -> i > n - 2 ) );
+		end;
+	
+	return OrlikSolomonBicomplex( m, chi, cat );
+	
+end;
+
+CellIntegralBlueBiOS := function( n, w )
+		local m, rk, i, chi, cat;
+		
+		cat := MatrixCategory ( HomalgFieldOfRationals( ) );
+	
+		m := Concatenation( CellIntegralBlueArrangement( n, w ), SimplexArrangement( n - 3 ) );
+		m := Matroid( m, HomalgFieldOfRationals( ) );
+		rk := RankFunction( m );
+
+		chi := function( flat )
+			if rk( flat ) = n - 2 then
+				return true;
+			else
+				return not rk( flat ) = Length( Filtered( flat, i -> i > n - 2 ) );
+			fi;
+		end;
+	
+		return OrlikSolomonBicomplex( m, chi, cat );
+	
 end;
 
 MultizetaBlueArrangement := function( ni_list )
