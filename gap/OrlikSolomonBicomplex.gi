@@ -326,20 +326,63 @@ InstallMethod( OrlikSolomonBicomplex,
 		[ IsRecord, IsList ],
 
 	function( A, S ) 
-		local i, j;
+		local i, j, r;
 		
 		if IsBound( A.( String( S ) ) ) then
 			return A.( String( S ) );
 		fi;
+		
+		r := RankOfMatroid( A.matroid );
 
 		A.( String( S ) ) := DoubleCochainComplex(
 			A.cat,
 			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i - 1, j ); end,
 			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i, j + 1 ); end
 		);
+		SetAboveBound( A.( String( S ) ), r + 1 );
+		SetBelowBound( A.( String( S ) ), -1 );
+		SetRightBound( A.( String( S ) ), 1 );
+		SetLeftBound( A.( String( S ) ), -r - 1 );
 
 	return A.( String( S ) );
 end ); 
+
+# Z3 := BlueMultizetaBiOS([3]);
+# 
+# R0 := List( [ -4 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 0, -i - 1, 0 ) );
+# for f in R0 do Display( f ); od;
+# R0 := CochainComplex( R0, -4 );
+# 
+# R1 := List( [ -3 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 1, -i - 1, 1 ) ); 
+# for f in R1 do Display( f ); od;
+# R1 := CochainComplex( R1, -3 );
+# 
+# R2 := List( [ -2 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 2, -i - 1, 2 ) ); 
+# for f in R2 do Display( f ); od;
+# R2 := CochainComplex( R2, -2 );
+# 
+# R3 := List( [ -1 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 3, -i - 1, 3 ) ); 
+# for f in R3 do Display( f ); od;
+# R3 := CochainComplex( R3, -1 );
+# 
+# R4 := List( [ 0 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 4, -i - 1, 4 ) ); 
+# for f in R4 do Display( f ); od;
+# R4 := CochainComplex( R4, 0 );
+# 
+# R01 := CochainMorphism( R0, R1, List( [ -3 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 0, -i, 1 ) ), -3 );
+# R12 := CochainMorphism( R0, R1, List( [ -2 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 1, -i, 2 ) ), -2 );
+# R23 := CochainMorphism( R0, R1, List( [ -1 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 2, -i, 3 ) ), -1 );
+# R34 := CochainMorphism( R0, R1, List( [ 0 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 3, -i, 4 ) ), 0 );
+# 
+# C := CochainComplex( [ R01, R12, R23, R34 ], 0 );
+# B := CohomologicalBicomplex( C );
+# 
+# DefectOfExactnessAt( C, 0 );
+# 
+# PrintArray( List( [ -5 .. 0 ], i -> List( [ 0 .. 5 ], j -> Dimension( C[i][j] ) ) ) );
+
+
+
 
 InstallMethod( OrlikSolomonBicomplex,
 		[ IsRecord, IsList ],
@@ -693,7 +736,7 @@ OrlikSolomonBicomplexDifferentials := function( A, Sigma )
 		ver[i + 1] := [];
 		for j in [ 0 .. r - 1 ] do
 			ver[i + 1][j + 1] := OrlikSolomonBicomplexDifferential( A, Sigma, r - i, j, r - i, j + 1 );
-			Print( "\n" );		od;
+		od;
 	od;
 	
 	return rec( hor := hor, ver := ver );
