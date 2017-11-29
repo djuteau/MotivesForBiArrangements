@@ -284,7 +284,7 @@ PrintArray( OrlikSolomonBicomplexDimensions( A, A.Smin ) );
 psi2 := function( flat )
 	return flat in [ 
 		[ 1 ], [ 2 ], [ 3 ], [ 4 ],
-		[ 1,2,6 ], [ 3, 4, 7 ], [ 1, 3 ], [ 1, 4 ], [ 2, 3 ], [ 2, 4 ],
+		[ 1, 2, 6 ], [ 3, 4, 7 ], [ 1, 3 ], [ 1, 4 ], [ 2, 3 ], [ 2, 4 ],
 		[ 1, 2, 3, 5, 6 ], [ 2, 3, 4, 7, 8 ], [ 1, 2, 4, 6 ], [ 1, 3, 4, 7 ],
 		[ 1, 4, 5, 8 ]
 	];
@@ -298,6 +298,108 @@ PrintArray( OrlikSolomonBicomplexDimensions( A, A.Smin ) );
   [   6,  12,   6,   0,   0 ],
   [   4,   4,   0,   0,   0 ],
   [   0,   0,   0,   0,   0 ] ]
+
+# Now with [ 1, 4, 5, 8 ] black
+
+chi3 := function( flat )
+	if flat = [ 1, 4, 5, 8 ] then
+		return fail;
+	else
+		return flat in [ 
+			[ 1 ], [ 2 ], [ 3 ], [ 4 ],
+			[ 1,2,6 ], [ 3, 4, 7 ], [ 1, 3 ], [ 1, 4 ], [ 2, 3 ], [ 2, 4 ],
+			[ 1, 2, 3, 5, 6 ], [ 2, 3, 4, 7, 8 ], [ 1, 2, 4, 6 ], [ 1, 3, 4, 7 ],
+			[ 1 .. 8 ]	
+		];
+	fi;
+end;
+
+A := OrlikSolomonBicomplex( m, chi3 );;
+IsBlueExact( A, A.Smin );
+PrintArray( OrlikSolomonBicomplexDimensions( A, A.Smin ) );
+
+[ [   1,   4,   6,   4,   0 ],
+  [   4,  12,  11,   4,   0 ],
+  [   6,  11,   5,   0,   0 ],
+  [   4,   3,   0,   0,   0 ],
+  [   1,   0,   0,   0,   0 ] ]
+  
+psi3 := function( flat )
+	if flat = [ 1, 4, 5, 8 ] then
+		return fail;
+	else
+		return flat in [ 
+			[ 1 ], [ 2 ], [ 3 ], [ 4 ],
+			[ 1,2,6 ], [ 3, 4, 7 ], [ 1, 3 ], [ 1, 4 ], [ 2, 3 ], [ 2, 4 ],
+			[ 1, 2, 3, 5, 6 ], [ 2, 3, 4, 7, 8 ], [ 1, 2, 4, 6 ], [ 1, 3, 4, 7 ],
+		];
+	fi;
+end;
+  
+A := OrlikSolomonBicomplex( m, psi3 );;
+IsRedExact( A, A.Smin );
+PrintArray( OrlikSolomonBicomplexDimensions( A, A.Smin ) );
+
+[ [   1,   4,   6,   4,   1 ],
+  [   4,  12,  11,   3,   0 ],
+  [   6,  11,   5,   0,   0 ],
+  [   4,   4,   0,   0,   0 ],
+  [   0,   0,   0,   0,   0 ] ]
+  
+# Now with 0 also black
+
+phi := function( flat )
+	if flat = [ 1, 4, 5, 8 ] or flat = [ 1 .. 8 ] then
+		return fail;
+	else
+		return flat in [ 
+			[ 1 ], [ 2 ], [ 3 ], [ 4 ],
+			[ 1,2,6 ], [ 3, 4, 7 ], [ 1, 3 ], [ 1, 4 ], [ 2, 3 ], [ 2, 4 ],
+			[ 1, 2, 3, 5, 6 ], [ 2, 3, 4, 7, 8 ], [ 1, 2, 4, 6 ], [ 1, 3, 4, 7 ],
+		];
+	fi;
+end;
+
+A := OrlikSolomonBicomplex( m, phi );;
+IsRedExact( A, A.Smin );
+PrintArray( OrlikSolomonBicomplexDimensions( A, A.Smin ) );
+
+
+# 
+# chi3 := function( flat )
+# 	if flat = [ 1, 4, 5, 8 ] then
+# 		return fail;
+# 	else
+# 		return flat in [ 
+# 			[ 1 ], [ 2 ], [ 3 ], [ 4 ],
+# 			[ 1,2,6 ], [ 3, 4, 7 ], [ 1, 3 ], [ 1, 4 ], [ 2, 3 ], [ 2, 4 ],
+# 			[ 1, 2, 3, 5, 6 ], [ 2, 3, 4, 7, 8 ], [ 1, 2, 4, 6 ], [ 1, 3, 4, 7 ],
+# 			[ 1 .. 8 ]	
+# 		];
+# 	fi;
+# end;
+# 
+# A := OrlikSolomonBicomplex( m, chi3 );;
+# IsBlueExact( A, A.Smin );
+# PrintArray( OrlikSolomonBicomplexDimensions( A, A.Smin ) );
+# 
+# [ [   1,   4,   6,   4,   0 ],
+#   [   4,  12,  11,   4,   0 ],
+#   [   6,  11,   5,   0,   0 ],
+#   [   4,   3,   0,   0,   0 ],
+#   [   1,   0,   0,   0,   0 ] ]
+#   
+# psi2 := function( flat )
+# 	return flat in [ 
+# 		[ 1 ], [ 2 ], [ 3 ], [ 4 ],
+# 		[ 1, 2, 6 ], [ 3, 4, 7 ], [ 1, 3 ], [ 1, 4 ], [ 2, 3 ], [ 2, 4 ],
+# 		[ 1, 2, 3, 5, 6 ], [ 2, 3, 4, 7, 8 ], [ 1, 2, 4, 6 ], [ 1, 3, 4, 7 ],
+# 		[ 1, 4, 5, 8 ]
+# 	];
+# end;
+# 
+# A := OrlikSolomonBicomplex( m, psi2 );;
+# PrintArray( OrlikSolomonBicomplexDimensions( A, A.Smin ) );
 
 
 gap> A := BrownMotiveBlue( 5 );;

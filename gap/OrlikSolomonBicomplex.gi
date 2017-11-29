@@ -191,7 +191,28 @@ InstallMethod( OrlikSolomonBicomplex,
             SS := Filtered( FlatsOfRankExtended( m, k - 1 ), S -> IsSubset( Sigma, S ) );
             TT := Filtered( FlatsOfRankExtended( m, k - 2 ), T -> IsSubset( Sigma, T ) );
             
-            if chi( Sigma ) then
+            if chi( Sigma ) = fail then
+            	for i in [ 1 .. k - 1 ] do
+                    psi := PreCompose(
+                                    OrlikSolomonBicomplexDifferential( A, Sigma, i, k - i - 1, i - 1, k - i - 1 ),
+                                    OrlikSolomonBicomplexDifferential( A, Sigma, i - 1, k - i - 1, i - 1, k - i )
+                    );
+                	SetOrlikSolomonBicomplexObject( A, Sigma, i, k - i, ImageObject( psi ) );
+                	
+                	d := ImageEmbedding( psi );
+                	D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i ) );
+                	for s in [ 1 .. Length( SS ) ] do
+                		SetOrlikSolomonBicomplexDifferentialComponent( A, Sigma, i, k - i, SS[s], i - 1, k - i, PreCompose( d, ProjectionInFactorOfDirectSum( D, s ) ) );
+                	od;
+                	
+                	d := CoastrictionToImage( psi );
+                    D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 ) );
+                    for s in [ 1 .. Length( SS ) ] do
+                        SetOrlikSolomonBicomplexDifferentialComponent( A, SS[s], i, k - i - 1, Sigma, i, k - i, PreCompose( InjectionOfCofactorOfDirectSum( D, s ), d ) );
+                    od;
+             	od;
+            
+            elif chi( Sigma ) then
                 for i in Reversed( [ 1 .. k ] ) do
                 	phi := OrlikSolomonBicomplexDifferential( A, Sigma, i - 1, k - i, i - 2, k - i );
                     d := KernelEmbedding( phi );
@@ -214,6 +235,7 @@ InstallMethod( OrlikSolomonBicomplex,
                         od;
                     fi;
                 od;
+                
             else
                 for i in [ 0 .. k - 1] do
                     phi := OrlikSolomonBicomplexDifferential( A, Sigma, i, k - i - 2, i, k - i - 1 );
@@ -244,6 +266,8 @@ InstallMethod( OrlikSolomonBicomplex,
     return A;
     
 end );
+
+
 
 InstallMethod( OrlikSolomonBicomplex,
         [ IsMatroid, IsFunction ],
@@ -347,7 +371,7 @@ InstallMethod( OrlikSolomonBicomplex,
 	return A.( String( S ) );
 end ); 
 
-# Z3 := BlueMultizetaBiOS([3]);
+# Z3 := BlueMultizetaBiOS([3]);;
 # 
 # R0 := List( [ -4 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 0, -i - 1, 0 ) );
 # for f in R0 do Display( f ); od;
@@ -370,16 +394,16 @@ end );
 # R4 := CochainComplex( R4, 0 );
 # 
 # R01 := CochainMorphism( R0, R1, List( [ -3 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 0, -i, 1 ) ), -3 );
-# R12 := CochainMorphism( R0, R1, List( [ -2 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 1, -i, 2 ) ), -2 );
-# R23 := CochainMorphism( R0, R1, List( [ -1 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 2, -i, 3 ) ), -1 );
-# R34 := CochainMorphism( R0, R1, List( [ 0 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 3, -i, 4 ) ), 0 );
+# R12 := CochainMorphism( R1, R2, List( [ -2 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 1, -i, 2 ) ), -2 );
+# R23 := CochainMorphism( R2, R3, List( [ -1 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 2, -i, 3 ) ), -1 );
+# R34 := CochainMorphism( R3, R4, List( [ 0 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 3, -i, 4 ) ), 0 );
 # 
 # C := CochainComplex( [ R01, R12, R23, R34 ], 0 );
 # B := CohomologicalBicomplex( C );
 # 
 # DefectOfExactnessAt( C, 0 );
 # 
-# PrintArray( List( [ -5 .. 0 ], i -> List( [ 0 .. 5 ], j -> Dimension( C[i][j] ) ) ) );
+# PrintArray( List( [ 0 .. 5 ], i -> List( [ 0 .. 5 ], j -> Dimension( C[j][-i] ) ) ) );
 
 
 
@@ -690,6 +714,24 @@ InstallMethod( BlueMultizetaBiOS,
 		return OrlikSolomonBicomplex( m, chi, cat );
 
 end );
+
+n := 3;
+		chi := function( flat )
+			if flat = [ 1, 4, 6, 8 ] then
+				return fail;
+			elif rk( flat ) = n + 1 then
+				return true;
+			else
+				return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
+			fi;
+		end;
+
+Z3black := OrlikSolomonBicomplex( m, chi, MatrixCategory( HomalgFieldOfRationals() ) );;
+IsBlueExact( Z3black, Z3black.Smin );
+PrintArray( OrlikSolomonBicomplexDimensions( Z3black, Z3black.Smin ) );
+
+
+
 
 InstallMethod( BlueMultizetaBiOS,
         [ IsList ],
