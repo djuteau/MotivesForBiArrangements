@@ -186,7 +186,7 @@ InstallMethod( OrlikSolomonBicomplex,
     	Print( "\nk = ", k, "\n" );
         for Sigma in FlatsOfRankExtended( m, k ) do
         	
-        	Print( "." );
+        	Print( ".\c" );
 
             SS := Filtered( FlatsOfRankExtended( m, k - 1 ), S -> IsSubset( Sigma, S ) );
             TT := Filtered( FlatsOfRankExtended( m, k - 2 ), T -> IsSubset( Sigma, T ) );
@@ -405,8 +405,82 @@ end );
 # 
 # PrintArray( List( [ 0 .. 5 ], i -> List( [ 0 .. 5 ], j -> Dimension( C[j][-i] ) ) ) );
 
+L5 := [ [ 1, 0, 0, 0, 0 ],
+	[  1, -1,  0,  0,  0 ],
+	[  1, -1,  1,  0,  0 ],
+	[  1, -1,  1, -1,  0 ],
+	[  1, -1,  1, -1,  1 ] ];
 
 
+M := [ [   1,   5,  10,  10,   5 ],
+  [   5,  21,  33,  21,   0 ],
+  [  10,  31,  33,   0,   0 ],
+  [  10,  19,   0,   0,   0 ],
+  [   5,   0,   0,   0,   0 ] ];
+  
+R5 := [ [ 1, 1, 1, 1, 1 ],
+	[ -1, -1, -1, -1,  0 ],
+	[  1,  1,  1,  0,  0 ],
+	[ -1, -1,  0,  0,  0 ],
+	[  1,  0,  0,  0,  0 ] ];
+	
+L6 := [ [ 1, 0, 0, 0, 0, 0 ],
+	[  1, -1,  0,  0,  0,  0 ],
+	[  1, -1,  1,  0,  0,  0 ],
+	[  1, -1,  1, -1,  0,  0 ],
+	[  1, -1,  1, -1,  1,  0 ],
+	[  1, -1,  1, -1,  1,  -1 ] ];
+
+R6 := [ [ 1, 1, 1, 1, 1, 1 ],
+	[ -1, -1, -1, -1, -1,  0 ],
+	[  1,  1,  1,  1,  0,  0 ],
+	[ -1, -1, -1,  0,  0,  0 ],
+	[  1,  1,  0,  0,  0,  0 ],
+	[ -1,  0,  0,  0,  0,  0 ] ];
+	
+B7pi1 := CellularBiArrangementRed( 7, PermList( [7, 2, 4, 1, 6, 3, 5] ) );; PrintArray(OrlikSolomonBicomplexDimensions(B7pi1,B7pi1.Smin));
+
+
+
+CellMotive := function( pi )
+	local w, n, blue, red, M, i, j, k, motive;
+	w := PermList( pi );
+	n := Length( pi );
+	
+	blue := CellularBiArrangementBlue( n, w );;
+	M := OrlikSolomonBicomplexDimensions( blue, blue.Smin );
+	Print( "\n\n" );
+	PrintArray( M );
+	Print( "\n" );
+	Print( "blue exact: ", IsBlueExact( blue, blue.Smin ), "\n" );
+	
+	red := CellularBiArrangementRed( n, w );;
+	M := OrlikSolomonBicomplexDimensions( red, red.Smin );
+	Print( "\n\n" );
+	PrintArray( M );
+	Print( "\n" );
+	Print( "red exact: ", IsRedExact( red, red.Smin ), "\n\n" );
+	
+	for i in [ 1 .. n - 1 ] do
+		for j in [ 1 .. n - 1 ] do
+			M[i][j] := ( -1 )^( i + j ) * M[i][j];
+		od;
+	od;
+
+# 	for k in [ 0 .. n - 3 ] do
+# 		Print ( "k = ", k, "\n" );
+# 		PrintArray( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 2 - k ] } );
+# 		Print( "\n" );
+# 	od;
+
+	motive := ( - 1)^( n + 1 ) * List( [ 0 .. n - 3 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 2 - k ] } ) ) );
+	
+	Print( motive );
+	Error( "" );
+	
+	return motive;
+end;
+	
 
 InstallMethod( OrlikSolomonBicomplex,
 		[ IsRecord, IsList ],
@@ -715,20 +789,20 @@ InstallMethod( BlueMultizetaBiOS,
 
 end );
 
-n := 3;
-		chi := function( flat )
-			if flat = [ 1, 4, 6, 8 ] then
-				return fail;
-			elif rk( flat ) = n + 1 then
-				return true;
-			else
-				return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
-			fi;
-		end;
-
-Z3black := OrlikSolomonBicomplex( m, chi, MatrixCategory( HomalgFieldOfRationals() ) );;
-IsBlueExact( Z3black, Z3black.Smin );
-PrintArray( OrlikSolomonBicomplexDimensions( Z3black, Z3black.Smin ) );
+# n := 3;
+# 		chi := function( flat )
+# 			if flat = [ 1, 4, 6, 8 ] then
+# 				return fail;
+# 			elif rk( flat ) = n + 1 then
+# 				return true;
+# 			else
+# 				return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
+# 			fi;
+# 		end;
+# 
+# Z3black := OrlikSolomonBicomplex( m, chi, MatrixCategory( HomalgFieldOfRationals() ) );;
+# IsBlueExact( Z3black, Z3black.Smin );
+# PrintArray( OrlikSolomonBicomplexDimensions( Z3black, Z3black.Smin ) );
 
 
 
