@@ -405,82 +405,7 @@ end );
 # 
 # PrintArray( List( [ 0 .. 5 ], i -> List( [ 0 .. 5 ], j -> Dimension( C[j][-i] ) ) ) );
 
-L5 := [ [ 1, 0, 0, 0, 0 ],
-	[  1, -1,  0,  0,  0 ],
-	[  1, -1,  1,  0,  0 ],
-	[  1, -1,  1, -1,  0 ],
-	[  1, -1,  1, -1,  1 ] ];
 
-
-M := [ [   1,   5,  10,  10,   5 ],
-  [   5,  21,  33,  21,   0 ],
-  [  10,  31,  33,   0,   0 ],
-  [  10,  19,   0,   0,   0 ],
-  [   5,   0,   0,   0,   0 ] ];
-  
-R5 := [ [ 1, 1, 1, 1, 1 ],
-	[ -1, -1, -1, -1,  0 ],
-	[  1,  1,  1,  0,  0 ],
-	[ -1, -1,  0,  0,  0 ],
-	[  1,  0,  0,  0,  0 ] ];
-	
-L6 := [ [ 1, 0, 0, 0, 0, 0 ],
-	[  1, -1,  0,  0,  0,  0 ],
-	[  1, -1,  1,  0,  0,  0 ],
-	[  1, -1,  1, -1,  0,  0 ],
-	[  1, -1,  1, -1,  1,  0 ],
-	[  1, -1,  1, -1,  1,  -1 ] ];
-
-R6 := [ [ 1, 1, 1, 1, 1, 1 ],
-	[ -1, -1, -1, -1, -1,  0 ],
-	[  1,  1,  1,  1,  0,  0 ],
-	[ -1, -1, -1,  0,  0,  0 ],
-	[  1,  1,  0,  0,  0,  0 ],
-	[ -1,  0,  0,  0,  0,  0 ] ];
-	
-B7pi1 := CellularBiArrangementRed( 7, PermList( [7, 2, 4, 1, 6, 3, 5] ) );; PrintArray(OrlikSolomonBicomplexDimensions(B7pi1,B7pi1.Smin));
-
-
-
-CellMotive := function( pi )
-	local w, n, blue, red, M, i, j, k, motive;
-	w := PermList( pi );
-	n := Length( pi );
-	
-	blue := CellularBiArrangementBlue( n, w );;
-	M := OrlikSolomonBicomplexDimensions( blue, blue.Smin );
-	Print( "\n\n" );
-	PrintArray( M );
-	Print( "\n" );
-	Print( "blue exact: ", IsBlueExact( blue, blue.Smin ), "\n" );
-	
-	red := CellularBiArrangementRed( n, w );;
-	M := OrlikSolomonBicomplexDimensions( red, red.Smin );
-	Print( "\n\n" );
-	PrintArray( M );
-	Print( "\n" );
-	Print( "red exact: ", IsRedExact( red, red.Smin ), "\n\n" );
-	
-	for i in [ 1 .. n - 1 ] do
-		for j in [ 1 .. n - 1 ] do
-			M[i][j] := ( -1 )^( i + j ) * M[i][j];
-		od;
-	od;
-
-# 	for k in [ 0 .. n - 3 ] do
-# 		Print ( "k = ", k, "\n" );
-# 		PrintArray( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 2 - k ] } );
-# 		Print( "\n" );
-# 	od;
-
-	motive := ( - 1)^( n + 1 ) * List( [ 0 .. n - 3 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 2 - k ] } ) ) );
-	
-	Print( motive );
-	Error( "" );
-	
-	return motive;
-end;
-	
 
 InstallMethod( OrlikSolomonBicomplex,
 		[ IsRecord, IsList ],
@@ -970,4 +895,149 @@ IsRedExact := function( A, S )
 end;
 
 
+CellularArrangement := function( n, w ) 
+	# choice of affine coordinates t_i with (z_1, ..., z_n) = (t_1, t_2, t_3, ..., t_{n-3}, 1, infty, 0)
+	# choice of projective coordinates (t_0, t_1, ..., t_n) with {t_0 = 0} the hyperplane at infinity (for consistency with SimplexArrangement)
+	local res, i, j, a, b, c;
+	
+	res := [];
+	
+	for i in [ 1 .. n - 2 ] do
+		res[i] := [];
+		for j in [ 1 .. n - 2 ] do
+			res[i][j] := 0;
+		od;
+	od;
+	
+	c := 1;
+	
+	for i in [ 1 .. n ] do
+		a := i^w;
+		if i = n then
+			b := 1^w;
+		else
+			b := ( i + 1 )^w;
+		fi;
+		
+		if a in [ 1 .. n - 3 ] then
+			if b in [ 1 .. n - 3 ] then
+				res[c][a + 1] := 1;
+				res[c][b + 1] := -1;
+				c := c + 1;
+			elif b = n - 2 then
+				res[c][a + 1] := 1;
+				res[c][1] := -1;
+				c := c + 1;
+			elif b = n then
+				res[c][a + 1] := 1;
+				c := c + 1;
+			fi;
+		elif a = n - 2 then
+			if b in [ 1 .. n - 3 ] then
+				res[c][1] := 1;
+				res[c][b + 1] := -1;
+				c := c + 1;
+			fi;
+		elif a = n then
+			if b in [ 1 .. n - 3 ] then
+				res[c][b + 1] := -1;
+				c := c + 1;
+			fi;
+		fi;
+	od;
+	
+	if c = n-2 then
+		res[n-2][1] := 1; # adding the hyperplane at infinity
+	fi;
+	
+	return res;
+end;
 
+CellularBiArrangementBlue := function( n, w )
+		local l, m, rk, i, chi, cat;
+		
+		cat := MatrixCategory ( HomalgFieldOfRationals( ) );
+	
+		l := Concatenation( CellularArrangement( n, w ), SimplexArrangement( n - 3 ) );
+		m := Matroid( l, HomalgFieldOfRationals( ) );
+		rk := RankFunction( m );
+
+		chi := function( flat )
+			if rk( flat ) = n - 2 then # flat is the maximal stratum {0}
+				return true;
+			elif rk( flat ) = Length( Filtered( flat, i -> i <= n - 2 ) ) then # flat is an intersection of blue hyperplanes
+				return true;
+			elif rk( flat ) = Length( Filtered( flat, i -> i > n-2 ) ) then # flat is an intersection of red hyperplanes
+				return false;
+			else 
+				return fail;
+			fi;
+		end;
+	
+		return OrlikSolomonBicomplex( m, chi, cat ); # or replace with the relevant command
+end;
+
+CellularBiArrangementRed := function( n, w )
+		local l, m, rk, i, chi, cat;
+		
+		cat := MatrixCategory ( HomalgFieldOfRationals( ) );
+	
+		l := Concatenation( CellularArrangement( n, w ), SimplexArrangement( n - 3 ) );
+		m := Matroid( l, HomalgFieldOfRationals( ) );
+		rk := RankFunction( m );
+
+		chi := function( flat )
+			if rk( flat ) = n - 2 then # flat is the maximal stratum {0}
+				return false;
+			elif rk( flat ) = Length( Filtered( flat, i -> i <= n - 2 ) ) then # flat is an intersection of blue hyperplanes
+				return true;
+			elif rk( flat ) = Length( Filtered( flat, i -> i > n-2 ) ) then # flat is an intersection of red hyperplanes
+				return false;
+			else 
+				return fail;
+			fi;
+		end;
+	
+		return OrlikSolomonBicomplex( m, chi, cat ); # or replace with the relevant command
+end;
+
+
+CellMotive := function( pi )
+	local w, n, blue, red, M, i, j, k, motive;
+	w := PermList( pi );
+	n := Length( pi );
+	
+	blue := CellularBiArrangementBlue( n, w );;
+	M := OrlikSolomonBicomplexDimensions( blue, blue.Smin );
+	Print( "\n\n" );
+	PrintArray( M );
+	Print( "\n" );
+	Print( "blue exact: ", IsBlueExact( blue, blue.Smin ), "\n" );
+	
+	red := CellularBiArrangementRed( n, w );;
+	M := OrlikSolomonBicomplexDimensions( red, red.Smin );
+	Print( "\n\n" );
+	PrintArray( M );
+	Print( "\n" );
+	Print( "red exact: ", IsRedExact( red, red.Smin ), "\n\n" );
+	
+	for i in [ 1 .. n - 1 ] do
+		for j in [ 1 .. n - 1 ] do
+			M[i][j] := ( -1 )^( i + j ) * M[i][j];
+		od;
+	od;
+
+# 	for k in [ 0 .. n - 3 ] do
+# 		Print ( "k = ", k, "\n" );
+# 		PrintArray( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 2 - k ] } );
+# 		Print( "\n" );
+# 	od;
+
+	motive := ( - 1)^( n + 1 ) * List( [ 0 .. n - 3 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 2 - k ] } ) ) );
+	
+	Print( motive );
+	Error( "" );
+	
+	return motive;
+end;
+	
