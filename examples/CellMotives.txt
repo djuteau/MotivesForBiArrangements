@@ -442,6 +442,16 @@ red exact: true
 
 [ 1, 0, 2, 2, 0, 1 ]
 
+for i in [ 1 .. Length( blue.flats ) ] do
+	for S in blue.flats[i] do
+		if chi( S ) = true then
+			Print( S, " blue exact:", IsBlueExact( blue, S ), "\n" );
+		elif chi( S ) = false then 
+			Print( S, " red exact:", IsRedExact( blue, S ), "\n" );
+		fi;
+	od;
+od;
+
 brk> DisplayColoring( blue.matroid, blue.coloring );
 [  ] true
 [ 1 ] true

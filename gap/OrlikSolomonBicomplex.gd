@@ -14,6 +14,9 @@ DeclareOperation( "Matroid",
 DeclareOperation( "FlatsOfRankExtended",
 		[ IsMatroid, IsInt ] );
 
+DeclareOperation( "DisplayColoring",
+		[ IsMatroid, IsFunction ] );
+
 DeclareOperation( "OrlikSolomonBicomplex",
         [ IsMatroid, IsFunction, IsCapCategory ] );
 

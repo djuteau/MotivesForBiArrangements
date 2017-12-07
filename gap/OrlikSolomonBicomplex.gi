@@ -37,12 +37,15 @@ InstallMethod( FlatsOfRankExtended,
 		return FlatsOfRank( matroid, k );
 end );
 
-DisplayColoring := function( m, chi )
-	local S;
-	for S in Concatenation( Flats( m ) ) do
-		Print( S, " ", chi( S ), "\n" );
-	od;
-end;
+InstallMethod( DisplayColoring,
+		[ IsMatroid, IsFunction ],
+
+	function( m, chi )
+		local S;
+		for S in Concatenation( Flats( m ) ) do
+			Print( S, " ", chi( S ), "\n" );
+		od;
+end );
 
 InstallMethod( HasOrlikSolomonBicomplexObject,
 		[ IsRecord, IsList, IsInt, IsInt ],
@@ -164,12 +167,78 @@ end );
 #
 ####################################
 
+ColorBool := function ( b )
+	if b = true then
+		return "blue";
+	elif b = false then
+		return "red";
+	else
+		return "black";
+	fi;
+end;
+
+OrlikSolomonBicomplexHorizontalHomologyObject := function( A, S, i, j )
+  local alpha, beta, iota, lambda;
+  
+  alpha := OrlikSolomonBicomplexDifferential( A, S, i + 1, j, i, j );
+  beta := OrlikSolomonBicomplexDifferential( A, S, i, j, i - 1, j );
+  
+  if not IsZero( PreCompose( alpha, beta ) ) then
+      
+      Error( "the composition of the given morphisms has to be zero" );
+      
+  fi;
+  
+  iota := ImageEmbedding( alpha );
+  
+  lambda := KernelLift( beta, iota );
+  
+  return CokernelObject( lambda );
+  
+end;
+
+IsBlueExact := function( A, S )
+	local r;
+	
+	r := A.rank( S );
+	
+	return ForAll( [ 0 .. r - 2 ], i -> ForAll( [ 0 .. r - 2 - i ], j -> IsZero( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) ) ) );
+end;
+
+OrlikSolomonBicomplexVerticalHomologyObject := function( A, S, i, j )
+  local alpha, beta, iota, lambda;
+  
+  alpha := OrlikSolomonBicomplexDifferential( A, S, i, j - 1, i, j );
+  beta := OrlikSolomonBicomplexDifferential( A, S, i, j, i, j + 1 );
+  
+  if not IsZero( PreCompose( alpha, beta ) ) then
+      
+      Error( "the composition of the given morphisms has to be zero" );
+      
+  fi;
+  
+  iota := ImageEmbedding( alpha );
+  
+  lambda := KernelLift( beta, iota );
+  
+  return CokernelObject( lambda );
+  
+end;
+
+IsRedExact := function( A, S )
+	local r;
+	
+	r := A.rank( S );
+	
+	return ForAll( [ 0 .. r - 2 ], i -> ForAll( [ 0 .. r - 2 - i ], j -> IsZero( OrlikSolomonBicomplexVerticalHomologyObject( A, S, i, j ) ) ) );
+end;
+
 ##
 InstallMethod( OrlikSolomonBicomplex,
         [ IsMatroid, IsFunction, IsCapCategory ],
 
   function( m, chi, cat )
-    local A, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj;
+    local A, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj, c;
 
     A := rec(
     		cat := cat,
@@ -186,12 +255,26 @@ InstallMethod( OrlikSolomonBicomplex,
     	Print( "\nk = ", k, "\n" );
         for Sigma in FlatsOfRankExtended( m, k ) do
         	
-        	Print( ".\c" );
+#        	Print( ".\c" );
 
             SS := Filtered( FlatsOfRankExtended( m, k - 1 ), S -> IsSubset( Sigma, S ) );
             TT := Filtered( FlatsOfRankExtended( m, k - 2 ), T -> IsSubset( Sigma, T ) );
             
-            if chi( Sigma ) = fail then
+            c := chi( Sigma );
+            
+            Print( Sigma, " is ", ColorBool( c ), ", " );
+            if IsBlueExact( A, Sigma ) then
+             		Print( "blue exact, " );
+            else
+             	Print( "NOT blue exact, " );
+            fi;
+            if IsRedExact( A, Sigma ) then
+             	Print( "red exact.\n" );
+            else
+             	Print( "NOT red exact.\n" );
+            fi;
+             
+            if c = fail then
             	for i in [ 1 .. k - 1 ] do
                     psi := PreCompose(
                                     OrlikSolomonBicomplexDifferential( A, Sigma, i, k - i - 1, i - 1, k - i - 1 ),
@@ -211,8 +294,8 @@ InstallMethod( OrlikSolomonBicomplex,
                         SetOrlikSolomonBicomplexDifferentialComponent( A, SS[s], i, k - i - 1, Sigma, i, k - i, PreCompose( InjectionOfCofactorOfDirectSum( D, s ), d ) );
                     od;
              	od;
-            
-            elif chi( Sigma ) then
+           
+            elif c then
                 for i in Reversed( [ 1 .. k ] ) do
                 	phi := OrlikSolomonBicomplexDifferential( A, Sigma, i - 1, k - i, i - 2, k - i );
                     d := KernelEmbedding( phi );
@@ -259,6 +342,7 @@ InstallMethod( OrlikSolomonBicomplex,
                         od;
                     fi;
                 od;
+                
             fi;
         od;
     od;
@@ -543,7 +627,7 @@ CellIntegralBlueArrangement := function( n, w )
 end;
 
 BrownMotive := function( n )
-	local L, M, matroid, chi, cat, c, rk;
+	local L, M, matroid, chi, cat, c, rk, res;
 
 	L := List( Combinations( [ 1.. n - 2 ], 2 ), function( c ) local res; res := List( [ 1 .. n - 2 ], i -> 0 ); res{ c } := [ 1, - 1 ]; return res; end );
 	Append( L, List( [ 1 .. n - 2 ], function( c ) local res; res := List( [ 1 .. n - 2 ], i -> 0 ); res[c] := 1; return res; end ) );
@@ -564,7 +648,10 @@ BrownMotive := function( n )
 #	Print( "M = "); PrintArray( M ); Print( "\n" );
 
 #	return Concatenation( L, M );
-	return OrlikSolomonBicomplex( matroid, chi, cat );
+
+	res := OrlikSolomonBicomplex( matroid, chi, cat );
+	Error( "" );
+	return res;
 end;
 
 BrownMotiveBlue := function( n )
@@ -830,69 +917,7 @@ DisplayOrlikSolomonBicomplexDifferentials := function( A, Sigma )
 	od;
 end;
 
-OrlikSolomonBicomplexHorizontalHomologyObject := function( A, S, i, j )
-  local alpha, beta, iota, lambda;
-  
-  alpha := OrlikSolomonBicomplexDifferential( A, S, i + 1, j, i, j );
-  beta := OrlikSolomonBicomplexDifferential( A, S, i, j, i - 1, j );
-  
-  if not IsZero( PreCompose( alpha, beta ) ) then
-      
-      Error( "the composition of the given morphisms has to be zero" );
-      
-  fi;
-  
-  iota := ImageEmbedding( alpha );
-  
-  lambda := KernelLift( beta, iota );
-  
-  return CokernelObject( lambda );
-  
-end;
 
-IsBlueExact := function( A, S )
-	local r;
-	
-	r := A.rank( S );
-	
-	return ForAll( [ 0 .. r - 1 ], i -> ForAll( [ 0 .. r - 1 ], j -> IsZero( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) ) ) );
-end;
-
-IsBlueExact := function( A, S )
-	local r;
-	
-	r := A.rank( S );
-	
-	return ForAll( [ 0 .. r - 1 ], i -> ForAll( [ 0 .. r - 1 ], j -> IsZero( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) ) ) );
-end;
-
-OrlikSolomonBicomplexVerticalHomologyObject := function( A, S, i, j )
-  local alpha, beta, iota, lambda;
-  
-  alpha := OrlikSolomonBicomplexDifferential( A, S, i, j - 1, i, j );
-  beta := OrlikSolomonBicomplexDifferential( A, S, i, j, i, j + 1 );
-  
-  if not IsZero( PreCompose( alpha, beta ) ) then
-      
-      Error( "the composition of the given morphisms has to be zero" );
-      
-  fi;
-  
-  iota := ImageEmbedding( alpha );
-  
-  lambda := KernelLift( beta, iota );
-  
-  return CokernelObject( lambda );
-  
-end;
-
-IsRedExact := function( A, S )
-	local r;
-	
-	r := A.rank( S );
-	
-	return ForAll( [ 0 .. r - 1 ], i -> ForAll( [ 0 .. r - 1 ], j -> IsZero( OrlikSolomonBicomplexVerticalHomologyObject( A, S, i, j ) ) ) );
-end;
 
 
 CellularArrangement := function( n, w ) 
@@ -1001,6 +1026,28 @@ CellularBiArrangementRed := function( n, w )
 		return OrlikSolomonBicomplex( m, chi, cat ); # or replace with the relevant command
 end;
 
+Euler := function( mat )
+	local M, n, i, j;
+	M := ShallowCopy( mat );
+	n := Length( M );
+	for i in [ 1 .. n ] do
+		for j in [ 1 .. n ] do
+			M[i][j] := ( -1 )^( i + j ) * M[i][j];
+		od;
+	od;
+	return ( - 1)^( n ) * List( [ 0 .. n - 2 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 1 - k ] } ) ) );
+end;
+
+#l:=List(Elements(DoubleCosets(S5,D5,D5)[4]), w -> ListPerm(w,5));
+
+DihedralDoubleCoset := function( w )
+	local n, Sym, Dih, v;
+	n := Length( w );
+	Sym := SymmetricGroup( n );
+	Dih := AsSubgroup( Sym, DihedralGroup( IsPermGroup, 2 * n ) );
+	w := PermList( w );
+	return List( Elements( DoubleCoset( Dih, w, Dih ) ), v -> ListPerm( v, n ) );
+end;
 
 CellMotive := function( pi )
 	local w, n, blue, red, M, i, j, k, motive;
@@ -1012,14 +1059,13 @@ CellMotive := function( pi )
 	Print( "\n\n" );
 	PrintArray( M );
 	Print( "\n" );
-	Print( "blue exact: ", IsBlueExact( blue, blue.Smin ), "\n" );
 	
-	red := CellularBiArrangementRed( n, w );;
-	M := OrlikSolomonBicomplexDimensions( red, red.Smin );
-	Print( "\n\n" );
-	PrintArray( M );
-	Print( "\n" );
-	Print( "red exact: ", IsRedExact( red, red.Smin ), "\n\n" );
+# 	red := CellularBiArrangementRed( n, w );;
+# 	M := OrlikSolomonBicomplexDimensions( red, red.Smin );
+# 	Print( "\n\n" );
+# 	PrintArray( M );
+# 	Print( "\n" );
+# 	Print( "red exact: ", IsRedExact( red, red.Smin ), "\n\n" );
 	
 	for i in [ 1 .. n - 1 ] do
 		for j in [ 1 .. n - 1 ] do
@@ -1027,17 +1073,53 @@ CellMotive := function( pi )
 		od;
 	od;
 
-# 	for k in [ 0 .. n - 3 ] do
-# 		Print ( "k = ", k, "\n" );
-# 		PrintArray( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 2 - k ] } );
-# 		Print( "\n" );
-# 	od;
-
 	motive := ( - 1)^( n + 1 ) * List( [ 0 .. n - 3 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 2 - k ] } ) ) );
 	
-	Print( motive );
-	Error( "" );
+#	Print( motive );
 	
 	return motive;
 end;
-	
+
+TestBlueRedStrataExactness := function( A )
+	local i, S, chi;
+	chi := A.coloring;
+	for i in [ 1 .. Length( A.flats ) ] do
+		for S in A.flats[i] do
+			if chi( S ) = true then
+            	Print( S, " blue exact: ", IsBlueExact( A, S ), "\n" );
+			elif chi( S ) = false then
+                Print( S, " red exact: ", IsRedExact( A, S ), "\n" );
+            fi;
+		od;
+	od;
+end;
+
+AllBlackToBlue := function( chi )
+	return function( S )
+		if chi( S ) = fail then return true; fi;
+		return chi( S );
+	end;
+end;
+
+AllBlackToRed := function( chi )
+	return function( S )
+		if chi( S ) = fail then return false; fi;
+		return chi( S );
+	end;
+end;
+
+BlackToBlue := function( chi, Sigma )
+	return function( S )
+		if S <> Sigma then return chi( S ); fi;
+		if chi( S ) = fail then return true; fi;
+		return chi( S );
+	end;
+end;
+
+BlackToRed := function( chi, Sigma )
+	return function( S )
+		if S <> Sigma then return chi( S ); fi;
+		if chi( S ) = fail then return false; fi;
+		return chi( S );
+	end;
+end;
