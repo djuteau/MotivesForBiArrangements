@@ -233,12 +233,64 @@ IsRedExact := function( A, S )
 	return ForAll( [ 0 .. r - 2 ], i -> ForAll( [ 0 .. r - 2 - i ], j -> IsZero( OrlikSolomonBicomplexVerticalHomologyObject( A, S, i, j ) ) ) );
 end;
 
+BlueNonExactness := function( A, S )
+	local r, res, i, j;
+	
+	r := A.rank( S );
+	
+	res := NullMat( r - 1, r - 1, 0 );
+	
+	for i in [ 0 .. r - 2 ] do
+		for j in [ 0 .. r - 2 - i ] do
+			res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) );
+		od;
+	od;
+	
+# 	if IsZero( res ) then
+# 		return true;
+# 	fi;
+# 	
+	return res;
+end;
+
+RedNonExactness := function( A, S )
+	local r, res, i, j;
+	
+	r := A.rank( S );
+	
+	res := NullMat( r - 1, r - 1, 0 );
+	
+	for i in [ 0 .. r - 2 ] do
+		for j in [ 0 .. r - 2 - i ] do
+			res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexVerticalHomologyObject( A, S, i, j ) );
+		od;
+	od;
+	
+# 	if IsZero( res ) then
+# 		return true;
+# 	fi;
+#	
+	return res;
+end;
+
+Euler := function( mat )
+	local M, n, i, j;
+	M := StructuralCopy( mat );
+	n := Length( M );
+	for i in [ 1 .. n ] do
+		for j in [ 1 .. n ] do
+			M[i][j] := ( -1 )^( i + j ) * M[i][j];
+		od;
+	od;
+	return ( - 1)^( n ) * List( [ 0 .. n - 2 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 1 - k ] } ) ) );
+end;
+
 ##
 InstallMethod( OrlikSolomonBicomplex,
         [ IsMatroid, IsFunction, IsCapCategory ],
 
   function( m, chi, cat )
-    local A, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj, c;
+    local A, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj, c, b, r;
 
     A := rec(
     		cat := cat,
@@ -262,17 +314,62 @@ InstallMethod( OrlikSolomonBicomplex,
             
             c := chi( Sigma );
             
-            Print( Sigma, " is ", ColorBool( c ), ", " );
-            if IsBlueExact( A, Sigma ) then
-             		Print( "blue exact, " );
+            if c = fail then
+             	b := BlueNonExactness( A, Sigma );
+             	r := RedNonExactness( A, Sigma );
+             	if IsZero( b ) and IsZero( r ) then
+             		Print( Sigma, " is black exact.\n" );
+             	else
+             		if not IsZero( b ) then
+             			Print( Sigma, " is black but not blue exact:\n" );
+             			PrintArray( b );
+             			Print( "\n" );
+             		fi;
+             		if not IsZero( r ) then
+             			Print( Sigma, " is black but not red exact:\n" );
+             			PrintArray( r );
+             			Print( "\n" );
+             		fi;
+             	fi;
+            elif c = true then
+            	b := BlueNonExactness( A, Sigma );
+            	if IsZero( b ) then
+             		Print( Sigma, " is blue exact.\n" );
+             	else
+             		if not IsZero( b ) then
+             			Print( Sigma, " is blue but not blue exact:\n" );
+             			PrintArray( b );
+             			Print( "\n" );
+             		fi;
+             	fi;
             else
-             	Print( "NOT blue exact, " );
+             	r := RedNonExactness( A, Sigma );
+            	if IsZero( r ) then
+             		Print( Sigma, " is red exact.\n" );
+             	else
+             		if not IsZero( r ) then
+             			Print( Sigma, " is red but not red exact:\n" );
+             			PrintArray( r );
+             			Print( "\n" );
+             		fi;
+             	fi;
             fi;
-            if IsRedExact( A, Sigma ) then
-             	Print( "red exact.\n" );
-            else
-             	Print( "NOT red exact.\n" );
+            
+            if Sigma = A.Smin then
+            	return A;
             fi;
+            
+#             Print( Sigma, " is ", ColorBool( c ), ", " );
+#             if IsBlueExact( A, Sigma ) then
+#              		Print( "blue exact, " );
+#             else
+#              	Print( "NOT blue exact, " );
+#             fi;
+#             if IsRedExact( A, Sigma ) then
+#              	Print( "red exact.\n" );
+#             else
+#              	Print( "NOT red exact.\n" );
+#             fi;
              
             if c = fail then
             	for i in [ 1 .. k - 1 ] do
@@ -347,6 +444,8 @@ InstallMethod( OrlikSolomonBicomplex,
         od;
     od;
     
+    Print( Euler( OrlikSolomonBicomplexDimensions( A, A.Smin ) ), "\n" );
+
     return A;
     
 end );
@@ -722,6 +821,27 @@ CellIntegralBlueBiOS := function( n, w )
 	
 end;
 
+CellIntegralBiOS := function( n, w )
+		local m, rk, i, chi, cat;
+		
+		cat := MatrixCategory ( HomalgFieldOfRationals( ) );
+	
+		m := Concatenation( CellIntegralBlueArrangement( n, w ), SimplexArrangement( n - 3 ) );
+		m := Matroid( m, HomalgFieldOfRationals( ) );
+		rk := RankFunction( m );
+
+		chi := function( flat )
+			if rk( flat ) = n - 2 then
+				return fail;
+			else
+				return not rk( flat ) = Length( Filtered( flat, i -> i > n - 2 ) );
+			fi;
+		end;
+	
+		return OrlikSolomonBicomplex( m, chi, cat );
+	
+end;
+
 MultizetaBlueArrangement := function( ni_list )
 	return IteratedIntegralBlueArrangement( Multizeta01Word ( ni_list ) );
 end;
@@ -801,30 +921,47 @@ InstallMethod( BlueMultizetaBiOS,
 
 end );
 
-# n := 3;
-# 		chi := function( flat )
-# 			if flat = [ 1, 4, 6, 8 ] then
-# 				return fail;
-# 			elif rk( flat ) = n + 1 then
-# 				return true;
-# 			else
-# 				return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
-# 			fi;
-# 		end;
-# 
-# Z3black := OrlikSolomonBicomplex( m, chi, MatrixCategory( HomalgFieldOfRationals() ) );;
-# IsBlueExact( Z3black, Z3black.Smin );
-# PrintArray( OrlikSolomonBicomplexDimensions( Z3black, Z3black.Smin ) );
-
-
-
-
 InstallMethod( BlueMultizetaBiOS,
         [ IsList ],
         
 	function( ni_list )
 	
 		return BlueMultizetaBiOS( ni_list, MatrixCategory( HomalgFieldOfRationals() ) );
+
+end );
+
+InstallMethod( MultizetaBiOS,
+		[ IsList, IsCapCategory ],
+
+	function( ni_list, cat )
+
+		local Q, n, m, rk, chi;
+		
+		Q := HomalgFieldOfRationals( );
+		n := Sum( ni_list );
+		
+		m := Concatenation( MultizetaBlueArrangement( ni_list ), SimplexArrangement( n ) );
+		m := Matroid( m, Q );
+		rk := RankFunction( m );
+		
+		chi := function( flat )
+			if rk( flat ) = n + 1 then
+				return fail;
+			else
+				return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
+			fi;
+		end;
+		
+		return OrlikSolomonBicomplex( m, chi, cat );
+
+end );
+
+InstallMethod( MultizetaBiOS,
+        [ IsList ],
+        
+	function( ni_list )
+	
+		return MultizetaBiOS( ni_list, MatrixCategory( HomalgFieldOfRationals() ) );
 
 end );
 
@@ -1026,16 +1163,28 @@ CellularBiArrangementRed := function( n, w )
 		return OrlikSolomonBicomplex( m, chi, cat ); # or replace with the relevant command
 end;
 
-Euler := function( mat )
-	local M, n, i, j;
-	M := ShallowCopy( mat );
-	n := Length( M );
-	for i in [ 1 .. n ] do
-		for j in [ 1 .. n ] do
-			M[i][j] := ( -1 )^( i + j ) * M[i][j];
-		od;
-	od;
-	return ( - 1)^( n ) * List( [ 0 .. n - 2 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 1 - k ] } ) ) );
+CellularBiArrangement := function( n, w )
+		local l, m, rk, i, chi, cat;
+		
+		cat := MatrixCategory ( HomalgFieldOfRationals( ) );
+	
+		l := Concatenation( CellularArrangement( n, w ), SimplexArrangement( n - 3 ) );
+		m := Matroid( l, HomalgFieldOfRationals( ) );
+		rk := RankFunction( m );
+
+		chi := function( flat )
+			if rk( flat ) = n - 2 then # flat is the maximal stratum {0}
+				return fail;
+			elif rk( flat ) = Length( Filtered( flat, i -> i <= n - 2 ) ) then # flat is an intersection of blue hyperplanes
+				return true;
+			elif rk( flat ) = Length( Filtered( flat, i -> i > n-2 ) ) then # flat is an intersection of red hyperplanes
+				return false;
+			else 
+				return fail;
+			fi;
+		end;
+	
+		return OrlikSolomonBicomplex( m, chi, cat ); # or replace with the relevant command
 end;
 
 #l:=List(Elements(DoubleCosets(S5,D5,D5)[4]), w -> ListPerm(w,5));
@@ -1050,22 +1199,15 @@ DihedralDoubleCoset := function( w )
 end;
 
 CellMotive := function( pi )
-	local w, n, blue, red, M, i, j, k, motive;
+	local w, n, A, M, i, j, k, motive;
 	w := PermList( pi );
 	n := Length( pi );
 	
-	blue := CellularBiArrangementBlue( n, w );;
-	M := OrlikSolomonBicomplexDimensions( blue, blue.Smin );
+	A := CellularBiArrangement( n, w );;
+	M := OrlikSolomonBicomplexDimensions( A, A.Smin );
 	Print( "\n\n" );
 	PrintArray( M );
 	Print( "\n" );
-	
-# 	red := CellularBiArrangementRed( n, w );;
-# 	M := OrlikSolomonBicomplexDimensions( red, red.Smin );
-# 	Print( "\n\n" );
-# 	PrintArray( M );
-# 	Print( "\n" );
-# 	Print( "red exact: ", IsRedExact( red, red.Smin ), "\n\n" );
 	
 	for i in [ 1 .. n - 1 ] do
 		for j in [ 1 .. n - 1 ] do
@@ -1075,9 +1217,9 @@ CellMotive := function( pi )
 
 	motive := ( - 1)^( n + 1 ) * List( [ 0 .. n - 3 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 2 - k ] } ) ) );
 	
-#	Print( motive );
+	Print( motive, "\n" );
 	
-	return motive;
+	return A;
 end;
 
 TestBlueRedStrataExactness := function( A )
