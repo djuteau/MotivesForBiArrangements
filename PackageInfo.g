@@ -36,6 +36,22 @@ Persons := [
     Institution := "University of Siegen",
   ),
   rec(
+  	IsAuthor := true,
+    IsMaintainer := true,
+    FirstNames := "Clément",
+    LastName := "Dupont",
+    WWWHome := "http://www.math.univ-montp2.fr/~dupont/",
+    Email := "clement.dupont@umontpellier.fr",
+    PostalAddress := Concatenation(
+            	"Institut Montpelliérain Alexander Grothendieck (IMAG)\n",
+            	"Université de Montpellier\n",
+            	"Place Eugène Bataillon\n",
+            	"34090 Montpellier\n",
+              	"France" ),
+    Place := "Montpellier",
+    Institution := "Université de Montpellier",
+  ),
+  rec(
     IsAuthor := true,
     IsMaintainer := true,
     FirstNames := "Daniel",
