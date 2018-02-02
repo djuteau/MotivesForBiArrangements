@@ -41,7 +41,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
     A.Smin := A.flats[Length( A.flats )][1];
 
     for k in [ 1 .. RankOfMatroid( m ) ] do
-    	Print( "\nk = ", k, "\n" );
+    	Print( "\nCodimension ", k, " (", Length( FlatsOfRank( m, k ) ), "flats)\n");
         for Sigma in FlatsOfRankExtended( m, k ) do
         	
 #        	Print( ".\c" );
@@ -1309,6 +1309,7 @@ BlackToRed := function( chi, Sigma )
 	end;
 end;
 
+##################################################
 
 Coloring := function( m, k, default )
  	local rk;
@@ -1329,7 +1330,22 @@ Coloring := function( m, k, default )
  	
  end;
  
-OrlikSolomonBicomplexGeneric := function( n, default )
+ InstallMethod( OrlikSolomonBicomplexRecord, 
+ 	[ IsList, IsList, IsBool ],
+ 	
+ 	function( L, M, default )
+ 		local arr, m, k;
+ 		
+ 		arr := Concatenation( L, M );
+ 		m := Matroid ( arr, HomalgFieldOfRationals( ) );
+ 		k := Length( L );
+ 		chi := Coloring( m, k, default );
+ 		
+ 		return OrlikSolomonBicomplexRecord( m, chi );
+ 	end );
+ 
+ 
+GenericOrlikSolomonBicomplexRecord := function( n, default )
 	local m, chi;
 	
 	m := UniformMatroid( n+1, 2*(n+1) );
@@ -1337,6 +1353,21 @@ OrlikSolomonBicomplexGeneric := function( n, default )
 	
 	return OrlikSolomonBicomplexRecord( m, chi );
 end;
+
+IteratedIntegralOrlikSolomonBicomplexRecord := function ( a, default )
+	local n, L, M; 
+	
+	n := Length(a);	
+	L := IteratedIntegralBlueArrangement( a );
+	M := SimplexArrangement ( n );
+	
+	return OrlikSolomonBicomplexRecord( L, M, default );
+end;
+
+
+
+
+
  
  
 
