@@ -62,6 +62,12 @@ DeclareOperation( "OrlikSolomonBicomplexRecord",
 #! @Returns a record
 DeclareOperation( "OrlikSolomonBicomplexRecord",
         [ IsMatroid, IsFunction ] );
+        
+#! @Description
+#! @Arguments L, M, default
+#! @Returns a record
+DeclareOperation( "OrlikSolomonBicomplexRecord",
+        [ IsList, IsList, IsBool ] );
 #! @EndGroup
 
 #! @Description

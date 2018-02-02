@@ -27,7 +27,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
         [ IsMatroid, IsFunction, IsCapCategory ],
 
   function( m, chi, cat )
-    local A, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj, c, b, r;
+    local A, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj, c, b, r, M;
 
     A := rec(
     		cat := cat,
@@ -41,7 +41,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
     A.Smin := A.flats[Length( A.flats )][1];
 
     for k in [ 1 .. RankOfMatroid( m ) ] do
-    	Print( "\nk = ", k, "\n" );
+    	Print( "\nCodimension ", k, " (", Length( FlatsOfRank( m, k ) ), "flats)\n");
         for Sigma in FlatsOfRankExtended( m, k ) do
         	
 #        	Print( ".\c" );
@@ -93,6 +93,11 @@ InstallMethod( OrlikSolomonBicomplexRecord,
             fi;
             
             if Sigma = A.Smin then
+            	M := OrlikSolomonBicomplexDimensions( A, A.Smin );
+            	Print( "\n" );
+            	PrintArray( M );
+            	Print( "\n" );
+                Print( Euler( M ), "\n" );
             	return A;
             fi;
              
@@ -169,8 +174,6 @@ InstallMethod( OrlikSolomonBicomplexRecord,
         od;
     od;
     
-    Print( Euler( OrlikSolomonBicomplexDimensions( A, A.Smin ) ), "\n" );
-
     return A;
     
 end );
@@ -1305,3 +1308,66 @@ BlackToRed := function( chi, Sigma )
 		return chi( S );
 	end;
 end;
+
+##################################################
+
+Coloring := function( m, k, default )
+ 	local rk;
+ 	
+ 	rk := RankFunction( m );
+ 	
+ 	return function( flat )
+			if rk( flat ) = Rank( m ) then # flat is the maximal stratum {0}
+				return fail;
+			elif rk( flat ) = Length( Filtered( flat, i -> i <= k ) ) then # flat is an intersection of blue hyperplanes
+				return true;
+			elif rk( flat ) = Length( Filtered( flat, i -> i > k ) ) then # flat is an intersection of red hyperplanes
+				return false;
+			else 
+				return default;
+			fi;
+		end;
+ 	
+ end;
+ 
+ InstallMethod( OrlikSolomonBicomplexRecord, 
+ 	[ IsList, IsList, IsBool ],
+ 	
+ 	function( L, M, default )
+ 		local arr, m, k;
+ 		
+ 		arr := Concatenation( L, M );
+ 		m := Matroid ( arr, HomalgFieldOfRationals( ) );
+ 		k := Length( L );
+ 		chi := Coloring( m, k, default );
+ 		
+ 		return OrlikSolomonBicomplexRecord( m, chi );
+ 	end );
+ 
+ 
+GenericOrlikSolomonBicomplexRecord := function( n, default )
+	local m, chi;
+	
+	m := UniformMatroid( n+1, 2*(n+1) );
+	chi := Coloring( m, n+1, default );
+	
+	return OrlikSolomonBicomplexRecord( m, chi );
+end;
+
+IteratedIntegralOrlikSolomonBicomplexRecord := function ( a, default )
+	local n, L, M; 
+	
+	n := Length(a);	
+	L := IteratedIntegralBlueArrangement( a );
+	M := SimplexArrangement ( n );
+	
+	return OrlikSolomonBicomplexRecord( L, M, default );
+end;
+
+
+
+
+
+ 
+ 
+
