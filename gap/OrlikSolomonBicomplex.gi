@@ -1,6 +1,6 @@
 ####################################
 #
-# methods for operations:
+# methods for constructors:
 #
 ####################################
 
@@ -22,271 +22,8 @@ InstallMethod( Matroid,
 
 end );
 
-InstallMethod( FlatsOfRankExtended,
-		[ IsMatroid, IsInt ],
-		
-	function( matroid, k )
-		local rank;
-		
-		rank := RankOfMatroid( matroid );
-		
-		if k < 0 or k > rank then
-			return [];
-		fi;
-		
-		return FlatsOfRank( matroid, k );
-end );
-
-InstallMethod( DisplayColoring,
-		[ IsMatroid, IsFunction ],
-
-	function( m, chi )
-		local S;
-		for S in Concatenation( Flats( m ) ) do
-			Print( S, " ", chi( S ), "\n" );
-		od;
-end );
-
-InstallMethod( HasOrlikSolomonBicomplexObject,
-		[ IsRecord, IsList, IsInt, IsInt ],
-		
-	function( A, S, i, j )
-
-		return IsBound( A.(JoinStringsWithSeparator( [ S, i, j ] )) );
-
-end );
-
-InstallMethod( SetOrlikSolomonBicomplexObject,
-		[ IsRecord, IsList, IsInt, IsInt, IsCapCategoryObject ],
-		
-	function( A, S, i, j, V )
-		
-		A.(JoinStringsWithSeparator( [ S, i, j ] )) := V;
-		
-end );
-
-InstallMethod( OrlikSolomonBicomplexObject,
-		[ IsRecord, IsList, IsInt, IsInt ],
-		
-	function( A, Sigma, i, j )
-		local V, SS;
-		
-		if HasOrlikSolomonBicomplexObject( A, Sigma, i, j ) then
-			V := A.(JoinStringsWithSeparator( [ Sigma, i, j ] ));
-		elif i + j < A.rank( Sigma ) then
-			SS := Filtered( FlatsOfRankExtended( A.matroid, i + j ), S -> IsSubset( Sigma, S ) );
-			V := DirectSum( A.cat, List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j ) ) );
-#			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
-		else
-			V := ZeroObject( A.cat );
-#			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
-		fi;
-		
-		return V;
-end );
-
-InstallGlobalFunction( HasOrlikSolomonBicomplexDifferentialComponent,
-#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
-
-	function( A, S, i, j, T, k, l )
-
-		return IsBound( A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] )) );
-
-end );
-
-InstallGlobalFunction( SetOrlikSolomonBicomplexDifferentialComponent,
-#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt, IsCapCategoryMorphism ],
-
-	function( A, S, i, j, T, k, l, f )
-
-		A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] )) := f;
-		
-end );
-
-InstallGlobalFunction( OrlikSolomonBicomplexDifferentialComponent,
-#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
-		
-	function( A, S, i, j, T, k, l )
-		local V, W, f;
-		
-		if HasOrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l ) then
-			f := A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] ));
-		else
-			V := OrlikSolomonBicomplexObject( A, S, i, j );
-			W := OrlikSolomonBicomplexObject( A, T, k, l );
-			f := ZeroMorphism( V, W );
-#			SetOrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l, f );
-		fi;
-
-		return f;
-end );
-
-InstallGlobalFunction( HasOrlikSolomonBicomplexDifferential,
-#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
-		
-	function( A, Sigma, i, j, k, l )
-
-		return IsBound( A.(JoinStringsWithSeparator( [ Sigma, i, j, k, l ] )) );
-				
-end );
-
-InstallGlobalFunction( SetOrlikSolomonBicomplexDifferential,
-#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt, IsCapCategoryMorphism ],
-		
-	function( A, Sigma, i, j, k, l, f )
-
-		A.(JoinStringsWithSeparator( [ Sigma, i, j, k, l ] )) := f;
-				
-end );
-
-InstallGlobalFunction( OrlikSolomonBicomplexDifferential,
-#		[ IsRecord, IsList, IsInt, IsInt, IsInt, IsInt ],
-		
-	function( A, Sigma, i, j, k, l )
-		local V, W, f, SS, TT;
-		
-		if HasOrlikSolomonBicomplexDifferential( A, Sigma, i, j, k, l ) then
-			f := A.(JoinStringsWithSeparator( [ Sigma, i, j, k, l ] ));
-		else
-            SS := Filtered( FlatsOfRankExtended( A.matroid, i + j ), S -> IsSubset( Sigma, S ) );
-            TT := Filtered( FlatsOfRankExtended( A.matroid, k + l ), T -> IsSubset( Sigma, T ) );
-			f := MorphismBetweenDirectSums(
-            	DirectSum( A.cat, List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j ) ) ),
-                List( SS, S -> List( TT, T -> OrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l ) ) ),
-                DirectSum( A.cat, List( TT, T -> OrlikSolomonBicomplexObject( A, T, k, l ) ) )
- 			);
-#			SetOrlikSolomonBicomplexDifferential( A, Sigma, i, j, k, l, f );
-		fi;
-
-		return f;
-end );
-
-####################################
-#
-# methods for constructors:
-#
-####################################
-
-ColorBool := function ( b )
-	if b = true then
-		return "blue";
-	elif b = false then
-		return "red";
-	else
-		return "black";
-	fi;
-end;
-
-OrlikSolomonBicomplexHorizontalHomologyObject := function( A, S, i, j )
-  local alpha, beta, iota, lambda;
-  
-  alpha := OrlikSolomonBicomplexDifferential( A, S, i + 1, j, i, j );
-  beta := OrlikSolomonBicomplexDifferential( A, S, i, j, i - 1, j );
-  
-  if not IsZero( PreCompose( alpha, beta ) ) then
-      
-      Error( "the composition of the given morphisms has to be zero" );
-      
-  fi;
-  
-  iota := ImageEmbedding( alpha );
-  
-  lambda := KernelLift( beta, iota );
-  
-  return CokernelObject( lambda );
-  
-end;
-
-IsBlueExact := function( A, S )
-	local r;
-	
-	r := A.rank( S );
-	
-	return ForAll( [ 0 .. r - 2 ], i -> ForAll( [ 0 .. r - 2 - i ], j -> IsZero( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) ) ) );
-end;
-
-OrlikSolomonBicomplexVerticalHomologyObject := function( A, S, i, j )
-  local alpha, beta, iota, lambda;
-  
-  alpha := OrlikSolomonBicomplexDifferential( A, S, i, j - 1, i, j );
-  beta := OrlikSolomonBicomplexDifferential( A, S, i, j, i, j + 1 );
-  
-  if not IsZero( PreCompose( alpha, beta ) ) then
-      
-      Error( "the composition of the given morphisms has to be zero" );
-      
-  fi;
-  
-  iota := ImageEmbedding( alpha );
-  
-  lambda := KernelLift( beta, iota );
-  
-  return CokernelObject( lambda );
-  
-end;
-
-IsRedExact := function( A, S )
-	local r;
-	
-	r := A.rank( S );
-	
-	return ForAll( [ 0 .. r - 2 ], i -> ForAll( [ 0 .. r - 2 - i ], j -> IsZero( OrlikSolomonBicomplexVerticalHomologyObject( A, S, i, j ) ) ) );
-end;
-
-BlueNonExactness := function( A, S )
-	local r, res, i, j;
-	
-	r := A.rank( S );
-	
-	res := NullMat( r - 1, r - 1, 0 );
-	
-	for i in [ 0 .. r - 2 ] do
-		for j in [ 0 .. r - 2 - i ] do
-			res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) );
-		od;
-	od;
-	
-# 	if IsZero( res ) then
-# 		return true;
-# 	fi;
-# 	
-	return res;
-end;
-
-RedNonExactness := function( A, S )
-	local r, res, i, j;
-	
-	r := A.rank( S );
-	
-	res := NullMat( r - 1, r - 1, 0 );
-	
-	for i in [ 0 .. r - 2 ] do
-		for j in [ 0 .. r - 2 - i ] do
-			res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexVerticalHomologyObject( A, S, i, j ) );
-		od;
-	od;
-	
-# 	if IsZero( res ) then
-# 		return true;
-# 	fi;
-#	
-	return res;
-end;
-
-Euler := function( mat )
-	local M, n, i, j;
-	M := StructuralCopy( mat );
-	n := Length( M );
-	for i in [ 1 .. n ] do
-		for j in [ 1 .. n ] do
-			M[i][j] := ( -1 )^( i + j ) * M[i][j];
-		od;
-	od;
-	return ( - 1)^( n ) * List( [ 0 .. n - 2 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 1 - k ] } ) ) );
-end;
-
 ##
-InstallMethod( OrlikSolomonBicomplex,
+InstallMethod( OrlikSolomonBicomplexRecord,
         [ IsMatroid, IsFunction, IsCapCategory ],
 
   function( m, chi, cat )
@@ -358,18 +95,6 @@ InstallMethod( OrlikSolomonBicomplex,
             if Sigma = A.Smin then
             	return A;
             fi;
-            
-#             Print( Sigma, " is ", ColorBool( c ), ", " );
-#             if IsBlueExact( A, Sigma ) then
-#              		Print( "blue exact, " );
-#             else
-#              	Print( "NOT blue exact, " );
-#             fi;
-#             if IsRedExact( A, Sigma ) then
-#              	Print( "red exact.\n" );
-#             else
-#              	Print( "NOT red exact.\n" );
-#             fi;
              
             if c = fail then
             	for i in [ 1 .. k - 1 ] do
@@ -452,22 +177,22 @@ end );
 
 
 
-InstallMethod( OrlikSolomonBicomplex,
+InstallMethod( OrlikSolomonBicomplexRecord,
         [ IsMatroid, IsFunction ],
         
 	function( m, chi )
 	
-		return OrlikSolomonBicomplex( m, chi, MatrixCategory( HomalgFieldOfRationals() ) );
+		return OrlikSolomonBicomplexRecord( m, chi, MatrixCategory( HomalgFieldOfRationals() ) );
 
 end );
 
-# InstallMethod( ProjectiveOrlikSolomonBicomplex,
+# InstallMethod( ProjectiveOrlikSolomonBicomplexRecord,
 #         [ IsMatroid, IsFunction, IsCapCategory ],
 # 
 # 	function( m, chi, cat )
 # 		local ;
 # 		
-# 		A := OrlikSolomonBicomplex( m, chi, cat );
+# 		A := OrlikSolomonBicomplexRecord( m, chi, cat );
 # 		
 # 		
 # 
@@ -554,41 +279,335 @@ InstallMethod( OrlikSolomonBicomplex,
 	return A.( String( S ) );
 end ); 
 
-# Z3 := BlueMultizetaBiOS([3]);;
-# 
-# R0 := List( [ -4 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 0, -i - 1, 0 ) );
-# for f in R0 do Display( f ); od;
-# R0 := CochainComplex( R0, -4 );
-# 
-# R1 := List( [ -3 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 1, -i - 1, 1 ) ); 
-# for f in R1 do Display( f ); od;
-# R1 := CochainComplex( R1, -3 );
-# 
-# R2 := List( [ -2 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 2, -i - 1, 2 ) ); 
-# for f in R2 do Display( f ); od;
-# R2 := CochainComplex( R2, -2 );
-# 
-# R3 := List( [ -1 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 3, -i - 1, 3 ) ); 
-# for f in R3 do Display( f ); od;
-# R3 := CochainComplex( R3, -1 );
-# 
-# R4 := List( [ 0 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 4, -i - 1, 4 ) ); 
-# for f in R4 do Display( f ); od;
-# R4 := CochainComplex( R4, 0 );
-# 
-# R01 := CochainMorphism( R0, R1, List( [ -3 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 0, -i, 1 ) ), -3 );
-# R12 := CochainMorphism( R1, R2, List( [ -2 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 1, -i, 2 ) ), -2 );
-# R23 := CochainMorphism( R2, R3, List( [ -1 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 2, -i, 3 ) ), -1 );
-# R34 := CochainMorphism( R3, R4, List( [ 0 .. 0 ], i -> OrlikSolomonBicomplexDifferential( Z3, Z3.Smin, -i, 3, -i, 4 ) ), 0 );
-# 
-# C := CochainComplex( [ R01, R12, R23, R34 ], 0 );
-# B := CohomologicalBicomplex( C );
-# 
-# DefectOfExactnessAt( C, 0 );
-# 
-# PrintArray( List( [ 0 .. 5 ], i -> List( [ 0 .. 5 ], j -> Dimension( C[j][-i] ) ) ) );
+InstallMethod( OrlikSolomonBicomplex,
+		[ IsRecord, IsList ],
+
+	function( A, S ) 
+		local i, j, r, res;
+		
+		r := RankOfMatroid( A.matroid );
+
+		res := DoubleCochainComplex(
+			A.cat,
+			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i - 1, j ); end,
+			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i, j + 1 ); end
+		);
+		SetAboveBound( res, r + 1 );
+		SetBelowBound( res, -1 );
+		SetRightBound( res, 1 );
+		SetLeftBound( res, -r - 1 );
+
+	return res;
+end ); 
 
 
+####################################
+#
+# methods for operations:
+#
+####################################
+
+InstallMethod( FlatsOfRankExtended,
+		[ IsMatroid, IsInt ],
+		
+	function( matroid, k )
+		local rank;
+		
+		rank := RankOfMatroid( matroid );
+		
+		if k < 0 or k > rank then
+			return [];
+		fi;
+		
+		return FlatsOfRank( matroid, k );
+end );
+
+InstallMethod( ColorBool,
+		[ IsBool ],
+
+	function ( b )
+		if b = true then
+			return "blue";
+		elif b = false then
+			return "red";
+		else
+			return "black";
+		fi;
+end );
+
+InstallMethod( DisplayColoring,
+		[ IsMatroid, IsFunction ],
+
+	function( m, chi )
+		local S;
+		for S in Concatenation( Flats( m ) ) do
+			Print( S, " ", chi( S ), "\n" );
+		od;
+end );
+
+InstallMethod( DisplayColoring,
+		[ IsRecord ],
+
+	function( A )
+		DisplayColoring( A.matroid, A.coloring );
+end );
+
+InstallMethod( HasOrlikSolomonBicomplexObject,
+		[ IsRecord, IsList, IsInt, IsInt ],
+		
+	function( A, S, i, j )
+
+		return IsBound( A.(JoinStringsWithSeparator( [ S, i, j ] )) );
+
+end );
+
+InstallMethod( SetOrlikSolomonBicomplexObject,
+		[ IsRecord, IsList, IsInt, IsInt, IsCapCategoryObject ],
+		
+	function( A, S, i, j, V )
+		
+		A.(JoinStringsWithSeparator( [ S, i, j ] )) := V;
+		
+end );
+
+InstallMethod( OrlikSolomonBicomplexObject,
+		[ IsRecord, IsList, IsInt, IsInt ],
+		
+	function( A, Sigma, i, j )
+		local V, SS;
+		
+		if HasOrlikSolomonBicomplexObject( A, Sigma, i, j ) then
+			V := A.(JoinStringsWithSeparator( [ Sigma, i, j ] ));
+		elif i + j < A.rank( Sigma ) then
+			SS := Filtered( FlatsOfRankExtended( A.matroid, i + j ), S -> IsSubset( Sigma, S ) );
+			V := DirectSum( A.cat, List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j ) ) );
+#			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
+		else
+			V := ZeroObject( A.cat );
+#			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
+		fi;
+		
+		return V;
+end );
+
+InstallGlobalFunction( HasOrlikSolomonBicomplexDifferentialComponent,
+#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
+
+	function( A, S, i, j, T, k, l )
+
+		return IsBound( A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] )) );
+
+end );
+
+InstallGlobalFunction( SetOrlikSolomonBicomplexDifferentialComponent,
+#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt, IsCapCategoryMorphism ],
+
+	function( A, S, i, j, T, k, l, f )
+
+		A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] )) := f;
+		
+end );
+
+InstallGlobalFunction( OrlikSolomonBicomplexDifferentialComponent,
+#		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
+		
+	function( A, S, i, j, T, k, l )
+		local V, W, f;
+		
+		if HasOrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l ) then
+			f := A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] ));
+		else
+			V := OrlikSolomonBicomplexObject( A, S, i, j );
+			W := OrlikSolomonBicomplexObject( A, T, k, l );
+			f := ZeroMorphism( V, W );
+#			SetOrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l, f );
+		fi;
+
+		return f;
+end );
+
+# InstallGlobalFunction( HasOrlikSolomonBicomplexDifferential,
+# #		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
+# 		
+# 	function( A, Sigma, i, j, k, l )
+# 
+# 		return IsBound( A.(JoinStringsWithSeparator( [ Sigma, i, j, k, l ] )) );
+# 				
+# end );
+# 
+# InstallGlobalFunction( SetOrlikSolomonBicomplexDifferential,
+# #		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt, IsCapCategoryMorphism ],
+# 		
+# 	function( A, Sigma, i, j, k, l, f )
+# 
+# 		A.(JoinStringsWithSeparator( [ Sigma, i, j, k, l ] )) := f;
+# 				
+# end );
+
+InstallGlobalFunction( OrlikSolomonBicomplexDifferential,
+#		[ IsRecord, IsList, IsInt, IsInt, IsInt, IsInt ],
+		
+	function( A, Sigma, i, j, k, l )
+		local V, W, f, SS, TT;
+		
+# 		if HasOrlikSolomonBicomplexDifferential( A, Sigma, i, j, k, l ) then
+# 			f := A.(JoinStringsWithSeparator( [ Sigma, i, j, k, l ] ));
+# 		else
+            SS := Filtered( FlatsOfRankExtended( A.matroid, i + j ), S -> IsSubset( Sigma, S ) );
+            TT := Filtered( FlatsOfRankExtended( A.matroid, k + l ), T -> IsSubset( Sigma, T ) );
+#			f := 
+			return MorphismBetweenDirectSums(
+            	DirectSum( A.cat, List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j ) ) ),
+                List( SS, S -> List( TT, T -> OrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l ) ) ),
+                DirectSum( A.cat, List( TT, T -> OrlikSolomonBicomplexObject( A, T, k, l ) ) )
+ 			);
+#			SetOrlikSolomonBicomplexDifferential( A, Sigma, i, j, k, l, f );
+#		fi;
+
+#		return f;
+end );
+
+####################################
+#
+# methods for constructors:
+#
+####################################
+
+
+InstallMethod( OrlikSolomonBicomplexHorizontalHomologyObject,
+		[ IsRecord, IsList, IsInt, IsInt ],
+
+	function( A, S, i, j )
+  		local alpha, beta, iota, lambda;
+
+		alpha := OrlikSolomonBicomplexDifferential( A, S, i + 1, j, i, j );
+		beta := OrlikSolomonBicomplexDifferential( A, S, i, j, i - 1, j );
+
+		if not IsZero( PreCompose( alpha, beta ) ) then
+      
+	      Error( "the composition of the given morphisms has to be zero" );
+      
+		fi;
+  
+		iota := ImageEmbedding( alpha );
+  
+		lambda := KernelLift( beta, iota );
+  
+		return CokernelObject( lambda );
+  
+end );
+
+InstallMethod( IsBlueExact,
+		[ IsRecord, IsList ],
+
+	function( A, S )
+		local r;
+	
+		r := A.rank( S );
+		
+		return ForAll(
+			[ 0 .. r - 2 ],
+			i -> ForAll(
+				[ 0 .. r - 2 - i ],
+				j -> IsZero( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) ) 
+				)
+		);
+
+end );
+
+InstallMethod( OrlikSolomonBicomplexVerticalHomologyObject,
+		[ IsRecord, IsList, IsInt, IsInt ],
+
+	function( A, S, i, j )
+		local alpha, beta, iota, lambda;
+
+		alpha := OrlikSolomonBicomplexDifferential( A, S, i, j - 1, i, j );
+		beta := OrlikSolomonBicomplexDifferential( A, S, i, j, i, j + 1 );
+  
+		if not IsZero( PreCompose( alpha, beta ) ) then
+      
+      		Error( "the composition of the given morphisms has to be zero" );
+      
+  		fi;
+  
+  		iota := ImageEmbedding( alpha );
+  
+  		lambda := KernelLift( beta, iota );
+  
+  	return CokernelObject( lambda );
+  
+end );
+
+InstallMethod( IsRedExact,
+		[ IsRecord, IsList ],
+
+	function( A, S )
+		local r;
+	
+		r := A.rank( S );
+		
+		return ForAll(
+			[ 0 .. r - 2 ],
+			i -> ForAll(
+				[ 0 .. r - 2 - i ],
+				j -> IsZero( OrlikSolomonBicomplexVerticalHomologyObject( A, S, i, j ) ) 
+				)
+		);
+
+end );
+
+InstallMethod( BlueNonExactness,
+		[ IsRecord, IsList ],
+
+	function( A, S )
+		local r, res, i, j;
+		
+		r := A.rank( S );
+	
+		res := NullMat( r - 1, r - 1, 0 );
+	
+		for i in [ 0 .. r - 2 ] do
+			for j in [ 0 .. r - 2 - i ] do
+				res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) );
+			od;
+		od;
+
+	return res;
+end );
+
+InstallMethod( RedNonExactness,
+		[ IsRecord, IsList ],
+
+	function( A, S )
+		local r, res, i, j;
+		
+		r := A.rank( S );
+	
+		res := NullMat( r - 1, r - 1 );
+	
+		for i in [ 0 .. r - 2 ] do
+			for j in [ 0 .. r - 2 - i ] do
+				res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexVerticalHomologyObject( A, S, i, j ) );
+			od;
+		od;
+
+	return res;
+end );
+
+InstallMethod( Euler,
+		[ IsList ],
+
+	function( mat )
+		local M, n, i, j;
+		M := StructuralCopy( mat );
+		n := Length( M );
+		for i in [ 1 .. n ] do
+			for j in [ 1 .. n ] do
+				M[i][j] := ( -1 )^( i + j ) * M[i][j];
+			od;
+		od;
+		return ( - 1)^( n ) * List( [ 0 .. n - 2 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 1 - k ] } ) ) );
+end);
 
 InstallMethod( OrlikSolomonBicomplex,
 		[ IsRecord, IsList ],
@@ -725,36 +744,36 @@ CellIntegralBlueArrangement := function( n, w )
 	return res;
 end;
 
+# BrownMotive := function( n )
+# 	local L, M, matroid, chi, cat, c, rk, res;
+# 
+# 	L := List( Combinations( [ 1.. n - 2 ], 2 ), function( c ) local res; res := List( [ 1 .. n - 2 ], i -> 0 ); res{ c } := [ 1, - 1 ]; return res; end );
+# 	Append( L, List( [ 1 .. n - 2 ], function( c ) local res; res := List( [ 1 .. n - 2 ], i -> 0 ); res[c] := 1; return res; end ) );
+# 	L := Set( L );
+# 	M := SimplexArrangement( n - 3 );
+# 	L := Difference( L, M );
+# 
+# 	matroid := Matroid( Concatenation( L, M ), HomalgFieldOfRationals( ) );
+# 	rk := RankFunction( matroid );
+# 	
+# 	chi := function( flat )
+# 		return not rk( flat ) = Length( Filtered( flat, i -> i > Length( L ) ) );
+# 	end;
+# 
+# 	cat := MatrixCategory ( HomalgFieldOfRationals( ) );
+# 
+# #	Print( "L = "); PrintArray( L ); Print( "\n" );
+# #	Print( "M = "); PrintArray( M ); Print( "\n" );
+# 
+# #	return Concatenation( L, M );
+# 
+# 	res := OrlikSolomonBicomplexRecord( matroid, chi, cat );
+# 	Error( "" );
+# 	return res;
+# end;
+
 BrownMotive := function( n )
-	local L, M, matroid, chi, cat, c, rk, res;
-
-	L := List( Combinations( [ 1.. n - 2 ], 2 ), function( c ) local res; res := List( [ 1 .. n - 2 ], i -> 0 ); res{ c } := [ 1, - 1 ]; return res; end );
-	Append( L, List( [ 1 .. n - 2 ], function( c ) local res; res := List( [ 1 .. n - 2 ], i -> 0 ); res[c] := 1; return res; end ) );
-	L := Set( L );
-	M := SimplexArrangement( n - 3 );
-	L := Difference( L, M );
-
-	matroid := Matroid( Concatenation( L, M ), HomalgFieldOfRationals( ) );
-	rk := RankFunction( matroid );
-	
-	chi := function( flat )
-		return not rk( flat ) = Length( Filtered( flat, i -> i > Length( L ) ) );
-	end;
-
-	cat := MatrixCategory ( HomalgFieldOfRationals( ) );
-
-#	Print( "L = "); PrintArray( L ); Print( "\n" );
-#	Print( "M = "); PrintArray( M ); Print( "\n" );
-
-#	return Concatenation( L, M );
-
-	res := OrlikSolomonBicomplex( matroid, chi, cat );
-	Error( "" );
-	return res;
-end;
-
-BrownMotiveBlue := function( n )
-	local L, M, matroid, chi, cat, c, rk, A;
+	local L, M, matroid, chi, c, rk, A;
 
 	L := List( Combinations( [ 1.. n - 2 ], 2 ), function( c ) local res; res := List( [ 1 .. n - 2 ], i -> 0 ); res{ c } := [ 1, - 1 ]; return res; end );
 	Append( L, List( [ 1 .. n - 2 ], function( c ) local res; res := List( [ 1 .. n - 2 ], i -> 0 ); res[c] := 1; return res; end ) );
@@ -767,20 +786,18 @@ BrownMotiveBlue := function( n )
 	
 	chi := function( flat )
 		if flat = [ 1 .. Length( Flats( matroid )[2] ) ] then
-			return true;
+			return fail;
 		else
 			return not rk( flat ) = Length( Filtered( flat, i -> i > Length( L ) ) );
 		fi;
 	end;
-
-	cat := MatrixCategory ( HomalgFieldOfRationals( ) );
 	
-	A := OrlikSolomonBicomplex( matroid, chi, cat );	
+	A := OrlikSolomonBicomplexRecord( matroid, chi );	
 	A.L := L;
 	A.M := M;
 
 	return A;
-#	return OrlikSolomonBicomplex( matroid, chi, cat );
+#	return OrlikSolomonBicomplexRecord( matroid, chi );
 end;
 
 CellIntegralRedBiOS := function( n, w )
@@ -796,7 +813,7 @@ CellIntegralRedBiOS := function( n, w )
 			return not rk( flat ) = Length( Filtered( flat, i -> i > n - 2 ) );
 		end;
 	
-	return OrlikSolomonBicomplex( m, chi, cat );
+	return OrlikSolomonBicomplexRecord( m, chi, cat );
 	
 end;
 
@@ -817,7 +834,7 @@ CellIntegralBlueBiOS := function( n, w )
 			fi;
 		end;
 	
-		return OrlikSolomonBicomplex( m, chi, cat );
+		return OrlikSolomonBicomplexRecord( m, chi, cat );
 	
 end;
 
@@ -838,7 +855,7 @@ CellIntegralBiOS := function( n, w )
 			fi;
 		end;
 	
-		return OrlikSolomonBicomplex( m, chi, cat );
+		return OrlikSolomonBicomplexRecord( m, chi, cat );
 	
 end;
 
@@ -861,7 +878,7 @@ end;
 # 		return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
 # 	end;
 # 	
-# 	return OrlikSolomonBicomplex( m, chi, cat );
+# 	return OrlikSolomonBicomplexRecord( m, chi, cat );
 # end;
 
 InstallMethod( RedMultizetaBiOS,
@@ -882,7 +899,7 @@ InstallMethod( RedMultizetaBiOS,
 			return not rk( flat ) = Length( Filtered( flat, i -> i > n + 1 ) );
 		end;
 	
-	return OrlikSolomonBicomplex( m, chi, cat );
+	return OrlikSolomonBicomplexRecord( m, chi, cat );
 	
 end );
 
@@ -917,7 +934,7 @@ InstallMethod( BlueMultizetaBiOS,
 			fi;
 		end;
 		
-		return OrlikSolomonBicomplex( m, chi, cat );
+		return OrlikSolomonBicomplexRecord( m, chi, cat );
 
 end );
 
@@ -952,7 +969,7 @@ InstallMethod( MultizetaBiOS,
 			fi;
 		end;
 		
-		return OrlikSolomonBicomplex( m, chi, cat );
+		return OrlikSolomonBicomplexRecord( m, chi, cat );
 
 end );
 
@@ -965,23 +982,26 @@ InstallMethod( MultizetaBiOS,
 
 end );
 
-OrlikSolomonBicomplexDimensions := function( A, Sigma )
-	local r, res, i, j;
+InstallMethod( OrlikSolomonBicomplexDimensions,
+		[ IsRecord, IsList ],
+
+	function( A, Sigma )
+		local r, res, i, j;
 	
-	r := A.rank( Sigma );
+		r := A.rank( Sigma );
 	
-	res := [];
-	for i in [ 0 .. r ] do
-		res[i + 1] := [];
-		for j in [ 0 .. r - i ] do
-			res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexObject( A, Sigma, i, j ) );
+		res := [];
+		for i in [ 0 .. r ] do
+			res[i + 1] := [];
+			for j in [ 0 .. r - i ] do
+				res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexObject( A, Sigma, i, j ) );
+			od;
+			for j in [ r - i + 1 .. r ] do
+				res[i + 1][j + 1] := 0;
+			od;
 		od;
-		for j in [ r - i + 1 .. r ] do
-			res[i + 1][j + 1] := 0;
-		od;
-	od;
-	return res;
-end;
+		return res;
+end );
 
 OrlikSolomonBicomplexDifferentials := function( A, Sigma )
 	local r, hor, ver, i, j;
@@ -1136,7 +1156,7 @@ CellularBiArrangementBlue := function( n, w )
 			fi;
 		end;
 	
-		return OrlikSolomonBicomplex( m, chi, cat ); # or replace with the relevant command
+		return OrlikSolomonBicomplexRecord( m, chi, cat ); # or replace with the relevant command
 end;
 
 CellularBiArrangementRed := function( n, w )
@@ -1160,14 +1180,15 @@ CellularBiArrangementRed := function( n, w )
 			fi;
 		end;
 	
-		return OrlikSolomonBicomplex( m, chi, cat ); # or replace with the relevant command
+		return OrlikSolomonBicomplexRecord( m, chi, cat ); # or replace with the relevant command
 end;
 
-CellularBiArrangement := function( n, w )
+InstallMethod( CellularBiArrangement,
+	[ IsInt, IsPerm, IsBool ],
+
+	function( n, w, default )
 		local l, m, rk, i, chi, cat;
 		
-		cat := MatrixCategory ( HomalgFieldOfRationals( ) );
-	
 		l := Concatenation( CellularArrangement( n, w ), SimplexArrangement( n - 3 ) );
 		m := Matroid( l, HomalgFieldOfRationals( ) );
 		rk := RankFunction( m );
@@ -1180,12 +1201,20 @@ CellularBiArrangement := function( n, w )
 			elif rk( flat ) = Length( Filtered( flat, i -> i > n-2 ) ) then # flat is an intersection of red hyperplanes
 				return false;
 			else 
-				return fail;
+				return default;
 			fi;
 		end;
 	
-		return OrlikSolomonBicomplex( m, chi, cat ); # or replace with the relevant command
-end;
+		return OrlikSolomonBicomplexRecord( m, chi ); # or replace with the relevant command
+end );
+
+InstallMethod( CellularBiArrangement,
+	[ IsInt, IsPerm ],
+
+	function( n, w )
+		return CellularBiArrangement( n, w, fail );
+
+end );
 
 #l:=List(Elements(DoubleCosets(S5,D5,D5)[4]), w -> ListPerm(w,5));
 
@@ -1198,29 +1227,40 @@ DihedralDoubleCoset := function( w )
 	return List( Elements( DoubleCoset( Dih, w, Dih ) ), v -> ListPerm( v, n ) );
 end;
 
-CellMotive := function( pi )
-	local w, n, A, M, i, j, k, motive;
-	w := PermList( pi );
-	n := Length( pi );
-	
-	A := CellularBiArrangement( n, w );;
-	M := OrlikSolomonBicomplexDimensions( A, A.Smin );
-	Print( "\n\n" );
-	PrintArray( M );
-	Print( "\n" );
-	
-	for i in [ 1 .. n - 1 ] do
-		for j in [ 1 .. n - 1 ] do
-			M[i][j] := ( -1 )^( i + j ) * M[i][j];
-		od;
-	od;
+InstallMethod( CellMotive,
+	[ IsList, IsBool ],
 
-	motive := ( - 1)^( n + 1 ) * List( [ 0 .. n - 3 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 2 - k ] } ) ) );
+	function( pi, default )
+		local w, n, A, M, i, j, k, motive;
+		w := PermList( pi );
+		n := Length( pi );
+		
+		A := CellularBiArrangement( n, w, default );;
+		M := OrlikSolomonBicomplexDimensions( A, A.Smin );
+		Print( "\n\n" );
+		PrintArray( M );
+		Print( "\n" );
 	
-	Print( motive, "\n" );
+		for i in [ 1 .. n - 1 ] do
+			for j in [ 1 .. n - 1 ] do
+				M[i][j] := ( -1 )^( i + j ) * M[i][j];
+			od;
+		od;
+
+		motive := ( - 1)^( n + 1 ) * List( [ 0 .. n - 3 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 2 - k ] } ) ) );
 	
-	return A;
-end;
+		Print( motive, "\n" );
+	
+		return A;
+end );
+
+InstallMethod( CellMotive,
+	[ IsList ],
+
+	function( pi )
+		return CellMotive( pi, fail );
+		
+end );
 
 TestBlueRedStrataExactness := function( A )
 	local i, S, chi;
