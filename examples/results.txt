@@ -1,0 +1,133 @@
+gap> A := BlueMultizetaBiOS( [ 2 ] );;
+gap> PrintArray( OrlikSolomonBicomplexDimensions( A, A.Smin ) );
+[ [  1,  3,  3,  0 ],
+  [  3,  5,  3,  0 ],
+  [  3,  2,  0,  0 ],
+  [  1,  0,  0,  0 ] ]
+gap> IsBlueExact( A, A.Smin );
+true
+gap> A := BlueMultizetaBiOS( [ 3 ] );;
+gap> PrintArray( OrlikSolomonBicomplexDimensions( A, A.Smin ) );
+[ [   1,   4,   6,   4,   0 ],
+  [   4,  12,  11,   4,   0 ],
+  [   6,  12,   5,   0,   0 ],
+  [   4,   4,   0,   0,   0 ],
+  [   1,   0,   0,   0,   0 ] ]
+gap> IsBlueExact( A, A.Smin );
+true
+gap> A := BlueMultizetaBiOS( [ 4 ] );;
+gap> PrintArray( OrlikSolomonBicomplexDimensions( A, A.Smin ) );
+[ [   1,   5,  10,  10,   5,   0 ],
+  [   5,  20,  30,  19,   5,   0 ],
+  [  10,  30,  30,   9,   0,   0 ],
+  [  10,  20,  10,   0,   0,   0 ],
+  [   5,   5,   0,   0,   0,   0 ],
+  [   1,   0,   0,   0,   0,   0 ] ]
+gap> IsBlueExact( A, A.Smin );
+true
+gap> A := BlueMultizetaBiOS( [ 5 ] );;
+gap> PrintArray( OrlikSolomonBicomplexDimensions( A, A.Smin ) );
+[ [   1,   6,  15,  20,  15,   6,   0 ],
+  [   6,  30,  60,  60,  29,   6,   0 ],
+  [  15,  60,  90,  60,  14,   0,   0 ],
+  [  20,  60,  60,  20,   0,   0,   0 ],
+  [  15,  30,  15,   0,   0,   0,   0 ],
+  [   6,   6,   0,   0,   0,   0,   0 ],
+  [   1,   0,   0,   0,   0,   0,   0 ] ]
+gap> IsBlueExact( A, A.Smin );
+true
+
+gap> B := RedMultizetaBiOS( [ 2 ] );;
+gap> PrintArray( OrlikSolomonBicomplexDimensions( B, B.Smin ) );
+[ [  1,  3,  3,  1 ],
+  [  3,  5,  2,  0 ],
+  [  3,  3,  0,  0 ],
+  [  0,  0,  0,  0 ] ]
+gap> IsRedExact( B, B.Smin );
+true
+gap> B := RedMultizetaBiOS( [ 3 ] );;
+gap> PrintArray( OrlikSolomonBicomplexDimensions( B, B.Smin ) );
+[ [   1,   4,   6,   4,   1 ],
+  [   4,  12,  11,   3,   0 ],
+  [   6,  12,   6,   0,   0 ],
+  [   4,   4,   0,   0,   0 ],
+  [   0,   0,   0,   0,   0 ] ]
+gap> IsRedExact( B, B.Smin );
+true
+gap> B := RedMultizetaBiOS( [ 4 ] );;
+gap> PrintArray( OrlikSolomonBicomplexDimensions( B, B.Smin ) );
+[ [   1,   5,  10,  10,   5,   1 ],
+  [   5,  20,  30,  19,   4,   0 ],
+  [  10,  30,  30,  10,   0,   0 ],
+  [  10,  20,  10,   0,   0,   0 ],
+  [   5,   5,   0,   0,   0,   0 ],
+  [   0,   0,   0,   0,   0,   0 ] ]
+gap> IsRedExact( B, B.Smin );
+true
+gap> B := RedMultizetaBiOS( [ 5 ] );;
+gap> PrintArray( OrlikSolomonBicomplexDimensions( B, B.Smin ) );
+[ [   1,   6,  15,  20,  15,   6,   1 ],
+  [   6,  30,  60,  60,  29,   5,   0 ],
+  [  15,  60,  90,  60,  15,   0,   0 ],
+  [  20,  60,  60,  20,   0,   0,   0 ],
+  [  15,  30,  15,   0,   0,   0,   0 ],
+  [   6,   6,   0,   0,   0,   0,   0 ],
+  [   0,   0,   0,   0,   0,   0,   0 ] ]
+gap> IsRedExact( B, B.Smin );
+true
+
+A := BlueMultizetaBiOS( [ 2 ], MatrixCategory( HomalgFieldOfRationals( ) ) );;
+for f in Concatenation( A.flats ) do Print( f, "\n\n" ); PrintArray( OrlikSolomonBicomplexDimensions( A, f ) ); Print( "\n" ); od;
+
+[  ]
+
+[ [  1 ] ]
+
+
+[ 1 ], [ 2 ], [ 3 ]
+
+[ [  1,  0 ],
+  [  1,  0 ] ]
+
+
+[ 4 ], [ 5 ], [ 6 ]
+
+[ [  1,  1 ],
+  [  0,  0 ] ]
+
+[ 1, 2, 4 ], [ 1, 3, 6 ]
+
+[ [  1,  1,  0 ],
+  [  2,  1,  0 ],
+  [  1,  0,  0 ] ]
+
+[ 1, 5 ]
+
+[ [  1,  1,  0 ],
+  [  1,  1,  0 ],
+  [  0,  0,  0 ] ]
+
+[ 2, 3 ]
+
+[ [  1,  0,  0 ],
+  [  2,  0,  0 ],
+  [  1,  0,  0 ] ]
+
+[ 2, 5, 6 ], [ 3, 4, 5 ]
+
+[ [  1,  2,  1 ],
+  [  1,  1,  0 ],
+  [  0,  0,  0 ] ]
+
+[ 4, 6 ]
+
+[ [  1,  2,  1 ],
+  [  0,  0,  0 ],
+  [  0,  0,  0 ] ]
+
+[ 1, 2, 3, 4, 5, 6 ]
+
+[ [  1,  3,  3,  0 ],
+  [  3,  5,  3,  0 ],
+  [  3,  2,  0,  0 ],
+  [  1,  0,  0,  0 ] ]
