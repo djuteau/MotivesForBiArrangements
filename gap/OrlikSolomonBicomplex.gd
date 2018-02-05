@@ -43,15 +43,29 @@ DeclareCategory( "IsProjectiveOrlikSolomonBicomplexRecord",
 #! @Arguments L, R
 #! @Returns a matroid
 DeclareOperation( "Matroid",
-        [ IsList, IsHomalgRing ] ); 
+        [ IsList, IsHomalgRing ] );
+
+#! @Description
+#!  The arguments are a matroid <A>m</A>, and integer <A>k</A> and a boolean <A>b</A> representing
+#!  the default color. The output is a coloring function on the matroid <A>m</A> such that
+#!  the first <A>k</A> hyperplanes are blue, the others are red, and a stratum which can be expressed
+#!  as an intersection of blue hyperplanes is blue, and similarly for red; the strata whose color is
+#!  not determined by those conditions are set to the default color.
+#! @Arguments m, k default
+#! @Returns a coloring function
+DeclareOperation( "Coloring",
+	[ IsMatroid, IsInt, IsBool ] );
 
 #! @BeginGroup OrlikSolomonBicomplexRecord
 #! @Label for IsMatroid, IsFunction[, IsCapCategory]
 #! @Description
-#!  Returns the Orlik-Solomon bicomplex of the bi-arrangement <A>m</A>
+#!  In the first form, returns the Orlik-Solomon bicomplex of the bi-arrangement <A>m</A>
 #!  with coloring function <A>chi</A>, as a bicomplex of objects in the
 #! category <A>cat</A>. If no category is specified, then
 #! by default <C>MatrixCategory( HomalgFieldOfRationals() )</C> is used.
+#! Alternatively, the biarrangement may be specified by a list of equations for the blue
+#! hyperplanes, a list of equations for the red hyperplanes, and a default color
+#! for the strata that are not obviously blue or red.
 #! @Arguments m, chi, cat
 #! @Returns a record
 DeclareOperation( "OrlikSolomonBicomplexRecord",

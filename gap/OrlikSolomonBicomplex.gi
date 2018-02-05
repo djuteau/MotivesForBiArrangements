@@ -41,10 +41,13 @@ InstallMethod( OrlikSolomonBicomplexRecord,
     A.Smin := A.flats[Length( A.flats )][1];
 
     for k in [ 1 .. RankOfMatroid( m ) ] do
-    	Print( "\nCodimension ", k, " (", Length( FlatsOfRank( m, k ) ), "flats)\n");
+    	if k = RankOfMatroid( m ) then
+    		Print( "\nCodimension ", k, " (", Length( FlatsOfRank( m, k ) ), " flat)\n");
+    	else
+    		Print( "\nCodimension ", k, " (", Length( FlatsOfRank( m, k ) ), " flats)\n");
+    	fi;
+    	
         for Sigma in FlatsOfRankExtended( m, k ) do
-        	
-#        	Print( ".\c" );
 
             SS := Filtered( FlatsOfRankExtended( m, k - 1 ), S -> IsSubset( Sigma, S ) );
             TT := Filtered( FlatsOfRankExtended( m, k - 2 ), T -> IsSubset( Sigma, T ) );
@@ -612,24 +615,24 @@ InstallMethod( Euler,
 		return ( - 1)^( n ) * List( [ 0 .. n - 2 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 1 - k ] } ) ) );
 end);
 
-InstallMethod( OrlikSolomonBicomplex,
-		[ IsRecord, IsList ],
-
-	function( A, S ) 
-		local i, j;
-		
-		if IsBound( A.( String( S ) ) ) then
-			return A.( String( S ) );
-		fi;
-
-		A.( String( S ) ) := DoubleCochainComplex(
-			A.cat,
-			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i - 1, j ); end,
-			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i, j + 1 ); end
-		);
-
-	return A.( String( S ) );
-end ); 
+# InstallMethod( OrlikSolomonBicomplex,
+# 		[ IsRecord, IsList ],
+# 
+# 	function( A, S ) 
+# 		local i, j;
+# 		
+# 		if IsBound( A.( String( S ) ) ) then
+# 			return A.( String( S ) );
+# 		fi;
+# 
+# 		A.( String( S ) ) := DoubleCochainComplex(
+# 			A.cat,
+# 			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i - 1, j ); end,
+# 			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i, j + 1 ); end
+# 		);
+# 
+# 	return A.( String( S ) );
+# end ); 
 
 SimplexArrangement := function( n )
 	local res, i, j;
@@ -1234,27 +1237,9 @@ InstallMethod( CellMotive,
 	[ IsList, IsBool ],
 
 	function( pi, default )
-		local w, n, A, M, i, j, k, motive;
-		w := PermList( pi );
-		n := Length( pi );
 		
-		A := CellularBiArrangement( n, w, default );;
-		M := OrlikSolomonBicomplexDimensions( A, A.Smin );
-		Print( "\n\n" );
-		PrintArray( M );
-		Print( "\n" );
-	
-		for i in [ 1 .. n - 1 ] do
-			for j in [ 1 .. n - 1 ] do
-				M[i][j] := ( -1 )^( i + j ) * M[i][j];
-			od;
-		od;
+		return CellularBiArrangement( Length( pi ), PermList( pi ), default );
 
-		motive := ( - 1)^( n + 1 ) * List( [ 0 .. n - 3 ], k -> Sum( Sum( M{ [ 1 .. k + 1 ] } { [ 1 .. n - 2 - k ] } ) ) );
-	
-		Print( motive, "\n" );
-	
-		return A;
 end );
 
 InstallMethod( CellMotive,
@@ -1311,57 +1296,59 @@ end;
 
 ##################################################
 
-Coloring := function( m, k, default )
- 	local rk;
+InstallMethod( Coloring,
+	[ IsMatroid, IsInt, IsBool ],
+	
+	function( m, k, default )
+	 	local rk;
  	
- 	rk := RankFunction( m );
+	 	rk := RankFunction( m );
  	
- 	return function( flat )
-			if rk( flat ) = Rank( m ) then # flat is the maximal stratum {0}
-				return fail;
-			elif rk( flat ) = Length( Filtered( flat, i -> i <= k ) ) then # flat is an intersection of blue hyperplanes
-				return true;
-			elif rk( flat ) = Length( Filtered( flat, i -> i > k ) ) then # flat is an intersection of red hyperplanes
-				return false;
-			else 
-				return default;
-			fi;
-		end;
+	 	return function( flat )
+				if rk( flat ) = Rank( m ) then # flat is the maximal stratum {0}
+					return fail;
+				elif rk( flat ) = Length( Filtered( flat, i -> i <= k ) ) then # flat is an intersection of blue hyperplanes
+					return true;
+				elif rk( flat ) = Length( Filtered( flat, i -> i > k ) ) then # flat is an intersection of red hyperplanes
+					return false;
+				else 
+					return default;
+				fi;
+			end;
  	
- end;
+ end );
  
- InstallMethod( OrlikSolomonBicomplexRecord, 
+InstallMethod( OrlikSolomonBicomplexRecord, 
  	[ IsList, IsList, IsBool ],
  	
  	function( L, M, default )
- 		local arr, m, k;
+ 		local m, chi;
  		
- 		arr := Concatenation( L, M );
- 		m := Matroid ( arr, HomalgFieldOfRationals( ) );
- 		k := Length( L );
- 		chi := Coloring( m, k, default );
+ 		m := Matroid ( Concatenation( L, M ), HomalgFieldOfRationals( ) );
+ 		chi := Coloring( m, Length( L ), default );
  		
  		return OrlikSolomonBicomplexRecord( m, chi );
- 	end );
+ 
+ end );
  
  
 GenericOrlikSolomonBicomplexRecord := function( n, default )
-	local m, chi;
+	local m;
 	
 	m := UniformMatroid( n+1, 2*(n+1) );
-	chi := Coloring( m, n+1, default );
-	
-	return OrlikSolomonBicomplexRecord( m, chi );
+
+	return OrlikSolomonBicomplexRecord(
+		m,
+		Coloring( m, n+1, default )
+	);
 end;
 
 IteratedIntegralOrlikSolomonBicomplexRecord := function ( a, default )
-	local n, L, M; 
-	
-	n := Length(a);	
-	L := IteratedIntegralBlueArrangement( a );
-	M := SimplexArrangement ( n );
-	
-	return OrlikSolomonBicomplexRecord( L, M, default );
+	return OrlikSolomonBicomplexRecord(
+		IteratedIntegralBlueArrangement( a ),
+		SimplexArrangement ( Length( a ) ),
+		default
+	);
 end;
 
 
