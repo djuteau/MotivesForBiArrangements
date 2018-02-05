@@ -150,7 +150,7 @@ DeclareOperation( "FlatsOfRankExtended",
 #! The argument is a boolean (<C>true</C>, <C>false</C> or <C>fail</C>).
 #! The output is the color it represents (blue, red or black respectively).
 #! In terms of sheaf operations, they correspond to $j_*$, $j_!$ and $j_{!*}$.
-#! @Arguments <A>b</A>
+#! @Arguments b
 #! @Returns a string 
 DeclareOperation( "ColorBool",
 		[ IsBool ] );
@@ -198,7 +198,7 @@ DeclareOperation( "SetOrlikSolomonBicomplexObject",
 
 #! @EndGroup
 
-#! @BeginGroup OrlikSolomonBicomplexDifferentialComponent
+#! @BeginGroup OrlikSolomonBicomplexDifferentialComponent_group
 #! @Description
 #!  The arguments are an Orlik-Solomon bicomplex record <A>A</A>, a list <A>S</A> (resp. <A>T</A>) representing a flat,
 #!  and integers <A>i</A> and <A>j</A> (resp. <A>k</A> and <A>l</A>) denoting a position in the bicomplex.
