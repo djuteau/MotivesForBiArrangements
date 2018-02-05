@@ -52,48 +52,46 @@ InstallMethod( OrlikSolomonBicomplexRecord,
             SS := Filtered( FlatsOfRankExtended( m, k - 1 ), S -> IsSubset( Sigma, S ) );
             TT := Filtered( FlatsOfRankExtended( m, k - 2 ), T -> IsSubset( Sigma, T ) );
             
-            c := chi( Sigma );
+            Print( ".\c");
             
-            if c = fail then
-             	b := BlueNonExactness( A, Sigma );
-             	r := RedNonExactness( A, Sigma );
-             	if IsZero( b ) and IsZero( r ) then
-             		Print( Sigma, " is black exact.\n" );
-             	else
-             		if not IsZero( b ) then
-             			Print( Sigma, " is black but not blue exact:\n" );
-             			PrintArray( b );
-             			Print( "\n" );
-             		fi;
-             		if not IsZero( r ) then
-             			Print( Sigma, " is black but not red exact:\n" );
-             			PrintArray( r );
-             			Print( "\n" );
-             		fi;
-             	fi;
-            elif c = true then
-            	b := BlueNonExactness( A, Sigma );
-            	if IsZero( b ) then
-             		Print( Sigma, " is blue exact.\n" );
-             	else
-             		if not IsZero( b ) then
-             			Print( Sigma, " is blue but not blue exact:\n" );
-             			PrintArray( b );
-             			Print( "\n" );
-             		fi;
-             	fi;
-            else
-             	r := RedNonExactness( A, Sigma );
-            	if IsZero( r ) then
-             		Print( Sigma, " is red exact.\n" );
-             	else
-             		if not IsZero( r ) then
-             			Print( Sigma, " is red but not red exact:\n" );
-             			PrintArray( r );
-             			Print( "\n" );
-             		fi;
-             	fi;
-            fi;
+            c := chi( Sigma );
+#            
+#             if c = fail then
+#             	if IsBlueExact( A, Sigma ) and IsRedExact( A, Sigma ) then
+#              		Print( Sigma, " is black exact.\n" );
+#             	else
+# 	             	b := BlueNonExactness( A, Sigma );
+# 	             	r := RedNonExactness( A, Sigma );
+#              		if not IsZero( b ) then
+#              			Print( Sigma, " is black but not blue exact:\n" );
+#              			PrintArray( b );
+#              			Print( "\n" );
+#              		fi;
+#              		if not IsZero( r ) then
+#              			Print( Sigma, " is black but not red exact:\n" );
+#              			PrintArray( r );
+#              			Print( "\n" );
+#              		fi;
+#              	fi;
+#             elif c = true then
+#             	if IsBlueExact( A, Sigma ) then
+#              		Print( Sigma, " is blue exact.\n" );
+#             	else
+# 	            	b := BlueNonExactness( A, Sigma );
+#              		Print( Sigma, " is blue but not blue exact:\n" );
+#              		PrintArray( b );
+#              		Print( "\n" );
+#              	fi;
+#             else
+#             	if IsRedExact( A, Sigma ) then
+#              		Print( Sigma, " is red exact.\n" );
+#             	else
+# 	             	r := RedNonExactness( A, Sigma );
+#              		Print( Sigma, " is red but not red exact:\n" );
+#              		PrintArray( r );
+#              		Print( "\n" );
+#              	fi;
+#             fi;
             
             if Sigma = A.Smin then
             	M := OrlikSolomonBicomplexDimensions( A, A.Smin );
@@ -175,6 +173,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
                 
             fi;
         od;
+    	Print( "\n" );
     od;
     
     return A;
@@ -187,8 +186,15 @@ InstallMethod( OrlikSolomonBicomplexRecord,
         [ IsMatroid, IsFunction ],
         
 	function( m, chi )
-	
-		return OrlikSolomonBicomplexRecord( m, chi, MatrixCategory( HomalgFieldOfRationals() ) );
+		local matrixcat;
+		
+		matrixcat := MatrixCategory( HomalgFieldOfRationalsInExternalGAP() );
+		
+		CapCategorySwitchLogicOff( matrixcat );
+		
+		#DeactivateCachingOfCategory( matrixcat );
+		
+		return OrlikSolomonBicomplexRecord( m, chi, matrixcat );
 
 end );
 
@@ -503,6 +509,8 @@ InstallMethod( OrlikSolomonBicomplexHorizontalHomologyObject,
   
 end );
 
+# OrlikSolomonBicomplexDifferential( A, A.Smin, 3, 0, 2, 0 );
+
 InstallMethod( IsBlueExact,
 		[ IsRecord, IsList ],
 
@@ -515,7 +523,10 @@ InstallMethod( IsBlueExact,
 			[ 0 .. r - 2 ],
 			i -> ForAll(
 				[ 0 .. r - 2 - i ],
-				j -> IsZero( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) ) 
+#				j -> IsZero( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) )
+				j -> Dimension( ImageObject( OrlikSolomonBicomplexDifferential( A, S, i, j, i - 1, j ) ) )
+					+ Dimension( ImageObject( OrlikSolomonBicomplexDifferential( A, S, i + 1, j, i, j ) ) )
+					= Dimension( OrlikSolomonBicomplexObject( A, S, i, j ) )
 				)
 		);
 
@@ -556,7 +567,10 @@ InstallMethod( IsRedExact,
 			[ 0 .. r - 2 ],
 			i -> ForAll(
 				[ 0 .. r - 2 - i ],
-				j -> IsZero( OrlikSolomonBicomplexVerticalHomologyObject( A, S, i, j ) ) 
+#				j -> IsZero( OrlikSolomonBicomplexVerticalHomologyObject( A, S, i, j ) ) 
+				j -> Dimension( ImageObject( OrlikSolomonBicomplexDifferential( A, S, i, j - 1, i, j ) ) )
+					+ Dimension( ImageObject( OrlikSolomonBicomplexDifferential( A, S, i, j, i, j + 1 ) ) )
+					= Dimension( OrlikSolomonBicomplexObject( A, S, i, j ) )
 				)
 		);
 
