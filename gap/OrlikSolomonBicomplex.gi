@@ -113,13 +113,13 @@ InstallMethod( OrlikSolomonBicomplexRecord,
                 	d := ImageEmbedding( psi );
                 	D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i ) );
                 	for s in [ 1 .. Length( SS ) ] do
-                		SetOrlikSolomonBicomplexDifferentialComponent( A, Sigma, i, k - i, SS[s], i - 1, k - i, PreCompose( d, ProjectionInFactorOfDirectSum( D, s ) ) );
+                		SetOrlikSolomonBicomplexDifferentialComponent( A, Sigma, i, k - i, SS[s], i - 1, k - i, ComponentOfMorphismIntoDirectSum( d, D, s ) );
                 	od;
                 	
                 	d := CoastrictionToImage( psi );
                     D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 ) );
                     for s in [ 1 .. Length( SS ) ] do
-                        SetOrlikSolomonBicomplexDifferentialComponent( A, SS[s], i, k - i - 1, Sigma, i, k - i, PreCompose( InjectionOfCofactorOfDirectSum( D, s ), d ) );
+                        SetOrlikSolomonBicomplexDifferentialComponent( A, SS[s], i, k - i - 1, Sigma, i, k - i, ComponentOfMorphismFromDirectSum( d, D, s ) );
                     od;
              	od;
            
@@ -130,7 +130,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
                     SetOrlikSolomonBicomplexObject( A, Sigma, i, k - i, Source( d ) );
                     D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i ) );
                     for s in [ 1 .. Length( SS ) ] do
-                    	SetOrlikSolomonBicomplexDifferentialComponent( A, Sigma, i, k - i, SS[s], i - 1, k - i, PreCompose( d, ProjectionInFactorOfDirectSum( D, s ) ) );
+                    	SetOrlikSolomonBicomplexDifferentialComponent( A, Sigma, i, k - i, SS[s], i - 1, k - i, ComponentOfMorphismIntoDirectSum( d, D, s ) );
                     od;
                     if i < k then
                         D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 ) );
@@ -141,7 +141,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
                         psi := KernelLift( phi, psi );
                         for s in [ 1 .. Length( SS ) ] do
                             SetOrlikSolomonBicomplexDifferentialComponent(
-                            	A, SS[s], i, k - i - 1, Sigma, i, k - i, PreCompose( InjectionOfCofactorOfDirectSum( D, s ), psi )
+                            	A, SS[s], i, k - i - 1, Sigma, i, k - i, ComponentOfMorphismFromDirectSum( psi, D, s )
                             );
                         od;
                     fi;
@@ -154,7 +154,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
                     SetOrlikSolomonBicomplexObject( A, Sigma, i, k - i, Range( d ) );
                     D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 ) );
                     for s in [ 1 .. Length( SS ) ] do
-                        SetOrlikSolomonBicomplexDifferentialComponent( A, SS[s], i, k - i - 1, Sigma, i, k - i, PreCompose( InjectionOfCofactorOfDirectSum( D, s ), d ) );
+                        SetOrlikSolomonBicomplexDifferentialComponent( A, SS[s], i, k - i - 1, Sigma, i, k - i, ComponentOfMorphismFromDirectSum( d, D, s ) );
                     od;
                     if i > 0 then
                         D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i ) );
@@ -165,7 +165,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
                         psi := CokernelColift( phi, psi );
                         for s in [ 1 .. Length( SS ) ] do
                             SetOrlikSolomonBicomplexDifferentialComponent(
-                            	A, Sigma, i, k - i, SS[s], i - 1, k - i, PreCompose( psi, ProjectionInFactorOfDirectSum( D, s ) )
+                            	A, Sigma, i, k - i, SS[s], i - 1, k - i, ComponentOfMorphismIntoDirectSum( psi, D, s )
                             );
                         od;
                     fi;
@@ -188,11 +188,11 @@ InstallMethod( OrlikSolomonBicomplexRecord,
 	function( m, chi )
 		local matrixcat;
 		
-		matrixcat := MatrixCategory( HomalgFieldOfRationalsInExternalGAP() );
+		matrixcat := MatrixCategory( HomalgFieldOfRationals() );
 		
 		CapCategorySwitchLogicOff( matrixcat );
 		
-		#DeactivateCachingOfCategory( matrixcat );
+		DeactivateCachingOfCategory( matrixcat );
 		
 		return OrlikSolomonBicomplexRecord( m, chi, matrixcat );
 
