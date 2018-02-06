@@ -195,6 +195,8 @@ InstallMethod( OrlikSolomonBicomplexRecord,
 		
 		DisableBasicOperationTypeCheck( matrixcat );
 		
+		SetCachingToCrisp( matrixcat, "ZeroMorphism" );
+		
 		return OrlikSolomonBicomplexRecord( m, chi, matrixcat );
 
 end );
