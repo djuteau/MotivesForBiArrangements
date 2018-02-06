@@ -194,6 +194,8 @@ InstallMethod( OrlikSolomonBicomplexRecord,
 		
 		DeactivateCachingOfCategory( matrixcat );
 		
+		DisableBasicOperationTypeCheck( matrixcat );
+		
 		return OrlikSolomonBicomplexRecord( m, chi, matrixcat );
 
 end );
