@@ -50,7 +50,6 @@ InstallMethod( OrlikSolomonBicomplexRecord,
         for Sigma in FlatsOfRankExtended( m, k ) do
 
             SS := Filtered( FlatsOfRankExtended( m, k - 1 ), S -> IsSubset( Sigma, S ) );
-            TT := Filtered( FlatsOfRankExtended( m, k - 2 ), T -> IsSubset( Sigma, T ) );
             
             Print( ".\c");
             
