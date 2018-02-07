@@ -1,5 +1,7 @@
 #! @Chapter The Orlik-Solomon bicomplex of a bi-arrangement
 
+DeclareGlobalFunction( "ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT" );
+
 ####################################
 ##
 #! @Section GAP Categories

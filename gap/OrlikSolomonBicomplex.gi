@@ -1,5 +1,18 @@
 ####################################
 #
+# Internal methods:
+#
+####################################
+
+InstallGlobalFunction( "ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT",
+   function( matroid, flat, rank )
+     
+     return Position( matroid!.flats_per_rank[rank+1],flat );
+     
+end );
+
+####################################
+#
 # methods for constructors:
 #
 ####################################
@@ -27,7 +40,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
         [ IsMatroid, IsFunction, IsCapCategory ],
 
   function( m, chi, cat )
-    local A, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj, c, b, r, M;
+    local A, rank_m, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj, c, b, r, M;
 
     A := rec(
     		cat := cat,
@@ -35,13 +48,28 @@ InstallMethod( OrlikSolomonBicomplexRecord,
     		flats := Flats( m ),
     		rank := RankFunction( m ),
     		coloring := chi,
-             (JoinStringsWithSeparator( [ [ ], 0, 0 ] )) := TensorUnit( cat ),
     		);
 
     A.Smin := A.flats[Length( A.flats )][1];
-
-    for k in [ 1 .. RankOfMatroid( m ) ] do
-    	if k = RankOfMatroid( m ) then
+    
+    rank_m := RankOfMatroid( m );
+    
+    m!.flats_per_rank := List( [ 0 .. rank_m ], k -> FlatsOfRank( m, k ) );
+    
+    A.objects := List( [ 0 .. rank_m ], i -> List( [ 0 .. rank_m - i ], j -> [] ) );
+    
+    A.objects[1][1][1] := TensorUnit( cat );
+    
+    A.differentials_horizontal := List( [ 0 .. rank_m ],
+                                    i -> List( [ 0 .. rank_m - i ],
+                                      j -> List( [ 1 .. Size( FlatsOfRankExtended( m, i + j ) ) ], k -> [] ) ) );
+    
+    A.differentials_vertical := List( [ 0 .. rank_m ],
+                                    i -> List( [ 0 .. rank_m - i ],
+                                      j -> List( [ 1 .. Size( FlatsOfRankExtended( m, i + j ) ) ], k -> [] ) ) );
+    
+    for k in [ 1 .. rank_m ] do
+    	if k = rank_m then
     		Print( "\nCodimension ", k, " (", Length( FlatsOfRank( m, k ) ), " flat)\n");
     	else
     		Print( "\nCodimension ", k, " (", Length( FlatsOfRank( m, k ) ), " flats)\n");
@@ -371,17 +399,35 @@ InstallMethod( HasOrlikSolomonBicomplexObject,
 		[ IsRecord, IsList, IsInt, IsInt ],
 		
 	function( A, S, i, j )
-
-		return IsBound( A.(JoinStringsWithSeparator( [ S, i, j ] )) );
-
+    local nr;
+    
+    if i < 0 or j < 0 then
+        
+        return false;
+        
+    fi;
+    
+    nr := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, S, i + j );
+    
+    if nr = fail then
+        
+        return false;
+        
+    fi;
+    
+    return IsBound( A.objects[i+1][j+1][nr] );
+		
 end );
 
 InstallMethod( SetOrlikSolomonBicomplexObject,
 		[ IsRecord, IsList, IsInt, IsInt, IsCapCategoryObject ],
 		
 	function( A, S, i, j, V )
+		local nr;
 		
-		A.(JoinStringsWithSeparator( [ S, i, j ] )) := V;
+		nr := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, S, i + j );
+		
+		A.objects[i+1][j+1][nr] := V;
 		
 end );
 
@@ -389,10 +435,13 @@ InstallMethod( OrlikSolomonBicomplexObject,
 		[ IsRecord, IsList, IsInt, IsInt ],
 		
 	function( A, Sigma, i, j )
-		local rank, V, SS;
+		local nr, rank, V, SS;
 		
 		if HasOrlikSolomonBicomplexObject( A, Sigma, i, j ) then
-			V := A.(JoinStringsWithSeparator( [ Sigma, i, j ] ));
+      
+      nr := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, Sigma, i + j );
+      
+			V := A.objects[i+1][j+1][nr];
 	  else
       rank := ValueOption("rank");
       
@@ -416,28 +465,94 @@ InstallGlobalFunction( HasOrlikSolomonBicomplexDifferentialComponent,
 #		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
 
 	function( A, S, i, j, T, k, l )
-
-		return IsBound( A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] )) );
-
+    local nr_S, nr_T;
+    
+    if (i < 0) or (j < 0) then
+        
+        return false;
+        
+    fi; 
+    
+    nr_S := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, S, i + j );
+    
+    nr_T := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, T, k + l );
+    
+    if nr_S = fail or nr_T = fail then
+        
+        return false;
+        
+    fi;
+    
+    if (k = i - 1) and (l = j) then # horizontal
+        
+        return IsBound( A.differentials_horizontal[i+1][j+1][nr_S][nr_T] );
+        
+    elif (k = i) and (l = j + 1) then #vertical
+        
+        return IsBound( A.differentials_vertical[i+1][j+1][nr_S][nr_T] );
+        
+    else
+        
+        return false;
+        
+    fi;
+		
 end );
 
 InstallGlobalFunction( SetOrlikSolomonBicomplexDifferentialComponent,
 #		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt, IsCapCategoryMorphism ],
 
 	function( A, S, i, j, T, k, l, f )
-
-		A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] )) := f;
-		
+    local nr_S, nr_T;
+    
+    nr_S := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, S, i + j );
+    
+    nr_T := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, T, k + l );
+    
+    if nr_S = fail or nr_T = fail then
+        
+        Error( "Differential for these flats cannot be set" );
+        
+    fi;
+    
+    if (k = i - 1) and (l = j) then # horizontal
+        
+        A.differentials_horizontal[i+1][j+1][nr_S][nr_T] := f;
+        
+    elif (k = i) and (l = j + 1) then #vertical
+        
+        A.differentials_vertical[i+1][j+1][nr_S][nr_T] := f;
+        
+    else
+        
+        Error( "Differential for these indices cannot be set" );
+        
+    fi;
+    
 end );
 
 InstallGlobalFunction( OrlikSolomonBicomplexDifferentialComponent,
 #		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
 		
 	function( A, S, i, j, T, k, l )
-		local V, W, f, rank_S, rank_T;
+		local nr_S, nr_T, V, W, f, rank_S, rank_T;
 		
 		if HasOrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l ) then
-			f := A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] ));
+      
+      nr_S := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, S, i + j );
+      
+      nr_T := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, T, k + l );
+      
+      if (k = i - 1) and (l = j) then # horizontal
+        
+        f := A.differentials_horizontal[i+1][j+1][nr_S][nr_T];
+        
+      elif (k = i) and (l = j + 1) then #vertical
+        
+        f := A.differentials_vertical[i+1][j+1][nr_S][nr_T];
+        
+      fi;
+    
 		else
       
       rank_S := ValueOption( "rankS" );
