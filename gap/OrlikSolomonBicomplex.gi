@@ -1,5 +1,18 @@
 ####################################
 #
+# Internal methods:
+#
+####################################
+
+InstallGlobalFunction( "ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT",
+   function( matroid, flat, rank )
+     
+     return Position( matroid!.flats_per_rank[rank+1],flat );
+     
+end );
+
+####################################
+#
 # methods for constructors:
 #
 ####################################
@@ -27,7 +40,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
         [ IsMatroid, IsFunction, IsCapCategory ],
 
   function( m, chi, cat )
-    local A, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj, c, b, r, M;
+    local A, rank_m, k, i, Sigma, SS, TT, S, T, phi, d, D, s, t, psi, obj, c, b, r, M;
 
     A := rec(
     		cat := cat,
@@ -35,13 +48,28 @@ InstallMethod( OrlikSolomonBicomplexRecord,
     		flats := Flats( m ),
     		rank := RankFunction( m ),
     		coloring := chi,
-             (JoinStringsWithSeparator( [ [ ], 0, 0 ] )) := TensorUnit( cat ),
     		);
 
     A.Smin := A.flats[Length( A.flats )][1];
-
-    for k in [ 1 .. RankOfMatroid( m ) ] do
-    	if k = RankOfMatroid( m ) then
+    
+    rank_m := RankOfMatroid( m );
+    
+    m!.flats_per_rank := List( [ 0 .. rank_m ], k -> FlatsOfRank( m, k ) );
+    
+    A.objects := List( [ 0 .. rank_m ], i -> List( [ 0 .. rank_m - i ], j -> [] ) );
+    
+    A.objects[1][1][1] := TensorUnit( cat );
+    
+    A.differentials_horizontal := List( [ 0 .. rank_m ],
+                                    i -> List( [ 0 .. rank_m - i ],
+                                      j -> List( [ 1 .. Size( FlatsOfRankExtended( m, i + j ) ) ], k -> [] ) ) );
+    
+    A.differentials_vertical := List( [ 0 .. rank_m ],
+                                    i -> List( [ 0 .. rank_m - i ],
+                                      j -> List( [ 1 .. Size( FlatsOfRankExtended( m, i + j ) ) ], k -> [] ) ) );
+    
+    for k in [ 1 .. rank_m ] do
+    	if k = rank_m then
     		Print( "\nCodimension ", k, " (", Length( FlatsOfRank( m, k ) ), " flat)\n");
     	else
     		Print( "\nCodimension ", k, " (", Length( FlatsOfRank( m, k ) ), " flats)\n");
@@ -50,7 +78,6 @@ InstallMethod( OrlikSolomonBicomplexRecord,
         for Sigma in FlatsOfRankExtended( m, k ) do
 
             SS := Filtered( FlatsOfRankExtended( m, k - 1 ), S -> IsSubset( Sigma, S ) );
-            TT := Filtered( FlatsOfRankExtended( m, k - 2 ), T -> IsSubset( Sigma, T ) );
             
             Print( ".\c");
             
@@ -111,15 +138,15 @@ InstallMethod( OrlikSolomonBicomplexRecord,
                 	SetOrlikSolomonBicomplexObject( A, Sigma, i, k - i, ImageObject( psi ) );
                 	
                 	d := ImageEmbedding( psi );
-                	D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i ) );
+                	D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i : rank := k - 1 ) );
                 	for s in [ 1 .. Length( SS ) ] do
-                		SetOrlikSolomonBicomplexDifferentialComponent( A, Sigma, i, k - i, SS[s], i - 1, k - i, PreCompose( d, ProjectionInFactorOfDirectSum( D, s ) ) );
+                		SetOrlikSolomonBicomplexDifferentialComponent( A, Sigma, i, k - i, SS[s], i - 1, k - i, ComponentOfMorphismIntoDirectSum( d, D, s ) );
                 	od;
                 	
                 	d := CoastrictionToImage( psi );
-                    D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 ) );
+                    D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 : rank := k - 1 ) );
                     for s in [ 1 .. Length( SS ) ] do
-                        SetOrlikSolomonBicomplexDifferentialComponent( A, SS[s], i, k - i - 1, Sigma, i, k - i, PreCompose( InjectionOfCofactorOfDirectSum( D, s ), d ) );
+                        SetOrlikSolomonBicomplexDifferentialComponent( A, SS[s], i, k - i - 1, Sigma, i, k - i, ComponentOfMorphismFromDirectSum( d, D, s ) );
                     od;
              	od;
            
@@ -128,12 +155,12 @@ InstallMethod( OrlikSolomonBicomplexRecord,
                 	phi := OrlikSolomonBicomplexDifferential( A, Sigma, i - 1, k - i, i - 2, k - i );
                     d := KernelEmbedding( phi );
                     SetOrlikSolomonBicomplexObject( A, Sigma, i, k - i, Source( d ) );
-                    D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i ) );
+                    D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i : rank := k - 1 )  );
                     for s in [ 1 .. Length( SS ) ] do
-                    	SetOrlikSolomonBicomplexDifferentialComponent( A, Sigma, i, k - i, SS[s], i - 1, k - i, PreCompose( d, ProjectionInFactorOfDirectSum( D, s ) ) );
+                    	SetOrlikSolomonBicomplexDifferentialComponent( A, Sigma, i, k - i, SS[s], i - 1, k - i, ComponentOfMorphismIntoDirectSum( d, D, s ) );
                     od;
                     if i < k then
-                        D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 ) );
+                        D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 : rank := k - 1 ) );
                         psi := PreCompose(
                                        OrlikSolomonBicomplexDifferential( A, Sigma, i, k - i - 1, i - 1, k - i - 1 ),
                                        OrlikSolomonBicomplexDifferential( A, Sigma, i - 1, k - i - 1, i - 1, k - i )
@@ -141,7 +168,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
                         psi := KernelLift( phi, psi );
                         for s in [ 1 .. Length( SS ) ] do
                             SetOrlikSolomonBicomplexDifferentialComponent(
-                            	A, SS[s], i, k - i - 1, Sigma, i, k - i, PreCompose( InjectionOfCofactorOfDirectSum( D, s ), psi )
+                            	A, SS[s], i, k - i - 1, Sigma, i, k - i, ComponentOfMorphismFromDirectSum( psi, D, s )
                             );
                         od;
                     fi;
@@ -152,12 +179,12 @@ InstallMethod( OrlikSolomonBicomplexRecord,
                     phi := OrlikSolomonBicomplexDifferential( A, Sigma, i, k - i - 2, i, k - i - 1 );
                     d := CokernelProjection( phi );
                     SetOrlikSolomonBicomplexObject( A, Sigma, i, k - i, Range( d ) );
-                    D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 ) );
+                    D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i, k - i - 1 : rank := k - 1 ) );
                     for s in [ 1 .. Length( SS ) ] do
-                        SetOrlikSolomonBicomplexDifferentialComponent( A, SS[s], i, k - i - 1, Sigma, i, k - i, PreCompose( InjectionOfCofactorOfDirectSum( D, s ), d ) );
+                        SetOrlikSolomonBicomplexDifferentialComponent( A, SS[s], i, k - i - 1, Sigma, i, k - i, ComponentOfMorphismFromDirectSum( d, D, s ) );
                     od;
                     if i > 0 then
-                        D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i ) );
+                        D := List( [ 1 .. Length( SS ) ], s -> OrlikSolomonBicomplexObject( A, SS[s], i - 1, k - i : rank := k - 1 ) );
                         psi := PreCompose(
                                        OrlikSolomonBicomplexDifferential( A, Sigma, i, k - i - 1, i - 1, k - i - 1 ),
                                        OrlikSolomonBicomplexDifferential( A, Sigma, i - 1, k - i - 1, i - 1, k - i )
@@ -165,7 +192,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
                         psi := CokernelColift( phi, psi );
                         for s in [ 1 .. Length( SS ) ] do
                             SetOrlikSolomonBicomplexDifferentialComponent(
-                            	A, Sigma, i, k - i, SS[s], i - 1, k - i, PreCompose( psi, ProjectionInFactorOfDirectSum( D, s ) )
+                            	A, Sigma, i, k - i, SS[s], i - 1, k - i, ComponentOfMorphismIntoDirectSum( psi, D, s )
                             );
                         od;
                     fi;
@@ -192,7 +219,11 @@ InstallMethod( OrlikSolomonBicomplexRecord,
 		
 		CapCategorySwitchLogicOff( matrixcat );
 		
-		#DeactivateCachingOfCategory( matrixcat );
+		DeactivateCachingOfCategory( matrixcat );
+		
+		DisableBasicOperationTypeCheck( matrixcat );
+		
+		SetCachingToCrisp( matrixcat, "ZeroMorphism" );
 		
 		return OrlikSolomonBicomplexRecord( m, chi, matrixcat );
 
@@ -368,17 +399,35 @@ InstallMethod( HasOrlikSolomonBicomplexObject,
 		[ IsRecord, IsList, IsInt, IsInt ],
 		
 	function( A, S, i, j )
-
-		return IsBound( A.(JoinStringsWithSeparator( [ S, i, j ] )) );
-
+    local nr;
+    
+    if i < 0 or j < 0 then
+        
+        return false;
+        
+    fi;
+    
+    nr := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, S, i + j );
+    
+    if nr = fail then
+        
+        return false;
+        
+    fi;
+    
+    return IsBound( A.objects[i+1][j+1][nr] );
+		
 end );
 
 InstallMethod( SetOrlikSolomonBicomplexObject,
 		[ IsRecord, IsList, IsInt, IsInt, IsCapCategoryObject ],
 		
 	function( A, S, i, j, V )
+		local nr;
 		
-		A.(JoinStringsWithSeparator( [ S, i, j ] )) := V;
+		nr := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, S, i + j );
+		
+		A.objects[i+1][j+1][nr] := V;
 		
 end );
 
@@ -386,19 +435,29 @@ InstallMethod( OrlikSolomonBicomplexObject,
 		[ IsRecord, IsList, IsInt, IsInt ],
 		
 	function( A, Sigma, i, j )
-		local V, SS;
+		local nr, rank, V, SS;
 		
 		if HasOrlikSolomonBicomplexObject( A, Sigma, i, j ) then
-			V := A.(JoinStringsWithSeparator( [ Sigma, i, j ] ));
-		elif i + j < A.rank( Sigma ) then
-			SS := Filtered( FlatsOfRankExtended( A.matroid, i + j ), S -> IsSubset( Sigma, S ) );
-			V := DirectSum( A.cat, List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j ) ) );
-#			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
-		else
-			V := ZeroObject( A.cat );
-#			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
+      
+      nr := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, Sigma, i + j );
+      
+			V := A.objects[i+1][j+1][nr];
+	  else
+      rank := ValueOption("rank");
+      
+      if rank = fail then
+          rank := A.rank( Sigma );
+      fi;
+      
+      if i + j < rank then
+        SS := Filtered( FlatsOfRankExtended( A.matroid, i + j ), S -> IsSubset( Sigma, S ) );
+        V := DirectSum( A.cat, List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j : rank := i + j ) ) );
+  #			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
+      else
+        V := ZeroObject( A.cat );
+  #			SetOrlikSolomonBicomplexObject( A, Sigma, i, j, V );
+      fi;
 		fi;
-		
 		return V;
 end );
 
@@ -406,31 +465,111 @@ InstallGlobalFunction( HasOrlikSolomonBicomplexDifferentialComponent,
 #		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
 
 	function( A, S, i, j, T, k, l )
-
-		return IsBound( A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] )) );
-
+    local nr_S, nr_T;
+    
+    if (i < 0) or (j < 0) then
+        
+        return false;
+        
+    fi; 
+    
+    nr_S := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, S, i + j );
+    
+    nr_T := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, T, k + l );
+    
+    if nr_S = fail or nr_T = fail then
+        
+        return false;
+        
+    fi;
+    
+    if (k = i - 1) and (l = j) then # horizontal
+        
+        return IsBound( A.differentials_horizontal[i+1][j+1][nr_S][nr_T] );
+        
+    elif (k = i) and (l = j + 1) then #vertical
+        
+        return IsBound( A.differentials_vertical[i+1][j+1][nr_S][nr_T] );
+        
+    else
+        
+        return false;
+        
+    fi;
+		
 end );
 
 InstallGlobalFunction( SetOrlikSolomonBicomplexDifferentialComponent,
 #		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt, IsCapCategoryMorphism ],
 
 	function( A, S, i, j, T, k, l, f )
-
-		A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] )) := f;
-		
+    local nr_S, nr_T;
+    
+    nr_S := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, S, i + j );
+    
+    nr_T := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, T, k + l );
+    
+    if nr_S = fail or nr_T = fail then
+        
+        Error( "Differential for these flats cannot be set" );
+        
+    fi;
+    
+    if (k = i - 1) and (l = j) then # horizontal
+        
+        A.differentials_horizontal[i+1][j+1][nr_S][nr_T] := f;
+        
+    elif (k = i) and (l = j + 1) then #vertical
+        
+        A.differentials_vertical[i+1][j+1][nr_S][nr_T] := f;
+        
+    else
+        
+        Error( "Differential for these indices cannot be set" );
+        
+    fi;
+    
 end );
 
 InstallGlobalFunction( OrlikSolomonBicomplexDifferentialComponent,
 #		[ IsRecord, IsList, IsInt, IsInt, IsList, IsInt, IsInt ],
 		
 	function( A, S, i, j, T, k, l )
-		local V, W, f;
+		local nr_S, nr_T, V, W, f, rank_S, rank_T;
 		
 		if HasOrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l ) then
-			f := A.(JoinStringsWithSeparator( [ S, i, j, T, k, l ] ));
+      
+      nr_S := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, S, i + j );
+      
+      nr_T := ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT( A.matroid, T, k + l );
+      
+      if (k = i - 1) and (l = j) then # horizontal
+        
+        f := A.differentials_horizontal[i+1][j+1][nr_S][nr_T];
+        
+      elif (k = i) and (l = j + 1) then #vertical
+        
+        f := A.differentials_vertical[i+1][j+1][nr_S][nr_T];
+        
+      fi;
+    
 		else
-			V := OrlikSolomonBicomplexObject( A, S, i, j );
-			W := OrlikSolomonBicomplexObject( A, T, k, l );
+      
+      rank_S := ValueOption( "rankS" );
+      rank_T := ValueOption( "rankT" );
+      
+      if rank_S <> fail then
+        V := OrlikSolomonBicomplexObject( A, S, i, j : rank := rank_S );
+      else
+        V := OrlikSolomonBicomplexObject( A, S, i, j );
+      fi;
+      
+      if rank_T <> fail then
+        W := OrlikSolomonBicomplexObject( A, T, k, l : rank := rank_T );
+      else
+        W := OrlikSolomonBicomplexObject( A, T, k, l );
+      fi;
+      
 			f := ZeroMorphism( V, W );
 #			SetOrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l, f );
 		fi;
@@ -469,9 +608,9 @@ InstallGlobalFunction( OrlikSolomonBicomplexDifferential,
             TT := Filtered( FlatsOfRankExtended( A.matroid, k + l ), T -> IsSubset( Sigma, T ) );
 #			f := 
 			return MorphismBetweenDirectSums(
-            	DirectSum( A.cat, List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j ) ) ),
-                List( SS, S -> List( TT, T -> OrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l ) ) ),
-                DirectSum( A.cat, List( TT, T -> OrlikSolomonBicomplexObject( A, T, k, l ) ) )
+            	DirectSum( A.cat, List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j : rank := i + j ) ) ),
+                List( SS, S -> List( TT, T -> OrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l : rankS := i + j, rankT := k + l ) ) ),
+                DirectSum( A.cat, List( TT, T -> OrlikSolomonBicomplexObject( A, T, k, l : rank := k + l ) ) )
  			);
 #			SetOrlikSolomonBicomplexDifferential( A, Sigma, i, j, k, l, f );
 #		fi;
@@ -1014,7 +1153,7 @@ InstallMethod( OrlikSolomonBicomplexDimensions,
 		for i in [ 0 .. r ] do
 			res[i + 1] := [];
 			for j in [ 0 .. r - i ] do
-				res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexObject( A, Sigma, i, j ) );
+				res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexObject( A, Sigma, i, j : rank := r ) );
 			od;
 			for j in [ r - i + 1 .. r ] do
 				res[i + 1][j + 1] := 0;
