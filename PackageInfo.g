@@ -15,6 +15,7 @@ Version := Maximum( [
                    "2017.05.01", ## Mohamed's version
                    ## this line prevents merge conflicts
                    "2017.05.01", ## Daniel's version
+                   "2018.02.07"
                    ] ),
 
 Date := ~.Version{[ 1 .. 10 ]},
@@ -113,7 +114,7 @@ Dependencies := rec(
   NeededOtherPackages := [ [ "GAPDoc", ">= 1.5" ],
                    [ "alcove", ">= 2016-09-21" ],
                    [ "M2", ">= 2017.05.01" ],
-                   [ "LinearAlgebraForCAP", ">= 0" ],
+                   [ "LinearAlgebraForCAP", ">= 2018.02.07" ],
                    [ "complex", ">= 2017.05.11" ]
                    ],
   SuggestedOtherPackages := [ ],
