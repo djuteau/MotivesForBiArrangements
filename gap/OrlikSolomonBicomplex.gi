@@ -188,7 +188,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
 	function( m, chi )
 		local matrixcat;
 		
-		matrixcat := MatrixCategory( HomalgFieldOfRationalsInExternalGAP() );
+		matrixcat := MatrixCategory( HomalgFieldOfRationals() );
 		
 		CapCategorySwitchLogicOff( matrixcat );
 		
