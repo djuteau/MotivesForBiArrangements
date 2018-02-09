@@ -68,7 +68,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
     
     A.differentials_vertical := List( [ 0 .. rank_m ],
                                     i -> List( [ 0 .. rank_m - i ],
-                                      j -> List( [ 1 .. Size( FlatsOfRank( m, i + j ) ) ], k -> [] ) ) );
+                                      j -> List( [ 1 .. m!.nr_flats_per_rank[i + j + 1] ], k -> [] ) ) );
     
     for k in [ 1 .. rank_m ] do
     	if k = rank_m then
