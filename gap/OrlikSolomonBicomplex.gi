@@ -35,6 +35,50 @@ InstallMethod( Matroid,
 
 end );
 
+IsIrreducibleFlat := function( mat, S )
+
+#	return Length( DirectSumDecomposition( Deletion( mat, Difference( GroundSet( mat ), S ) ) ) ) = 1;
+	return Length( DirectSumDecomposition( Restriction( mat, S ) ) ) = 1;
+	
+end;
+
+IrreducibleFlats := function( mat )
+
+	return List( Flats( mat ){[ 2 .. Length( Flats( mat ) ) ]}, l -> Filtered( l, S -> IsIrreducibleFlat( mat, S ) ) );
+	
+end;
+
+IsTameFlat := function( A, S )
+	local mat, chi, C, l, cl;
+	
+	mat := A.matroid;
+	chi := A.coloring;
+	cl := ClosureOperator( mat );
+#	N := Size( mat );
+	
+	if S = [ ] then
+		return true;
+	fi;
+	
+	if chi( S ) = true then
+		C := [ true ];
+	elif chi( S ) = false then
+		C := [ false ];
+	else
+		C := [ true, false ];
+	fi;
+	
+	l := List( C, c -> Filtered( S, h -> chi( [ h ] ) = c ) );
+	
+#	N := List( C, c -> Length( Filtered( A.flats[ 2 ], T -> ( chi( T ) = ( not ( c ) ) ) ) ) );
+	
+	return ForAll( [ 1 .. Length( C ) ], i -> [ ] <> Difference( l[i], Union( Filtered( Circuits( mat ), T -> IsSubset( S, T ) and chi( cl( T ) ) = ( not C[i] ) ) ) ) );
+	
+#	return Length( Union( Filtered( Circuits( mat ), T -> IsSubset( S, T ) and chi( T ) = C[i] ) ) ) < N[i];
+#	return ForAll( l );
+
+end;
+
 ##
 InstallMethod( OrlikSolomonBicomplexRecord,
         [ IsMatroid, IsFunction, IsCapCategory ],
