@@ -7,7 +7,7 @@
 InstallGlobalFunction( "ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT",
    function( matroid, flat, rank )
      
-     return Position( matroid!.flats_per_rank[rank+1],flat );
+     return Position( matroid!.flats_per_rank[rank + 1],flat );
      
 end );
 
@@ -35,6 +35,50 @@ InstallMethod( Matroid,
 
 end );
 
+IsIrreducibleFlat := function( mat, S )
+
+#	return Length( DirectSumDecomposition( Deletion( mat, Difference( GroundSet( mat ), S ) ) ) ) = 1;
+	return Length( DirectSumDecomposition( Restriction( mat, S ) ) ) = 1;
+	
+end;
+
+IrreducibleFlats := function( mat )
+
+	return List( Flats( mat ){[ 2 .. Length( Flats( mat ) ) ]}, l -> Filtered( l, S -> IsIrreducibleFlat( mat, S ) ) );
+	
+end;
+
+IsTameFlat := function( A, S )
+	local mat, chi, C, l, cl;
+	
+	mat := A.matroid;
+	chi := A.coloring;
+	cl := ClosureOperator( mat );
+#	N := Size( mat );
+	
+	if S = [ ] then
+		return true;
+	fi;
+	
+	if chi( S ) = true then
+		C := [ true ];
+	elif chi( S ) = false then
+		C := [ false ];
+	else
+		C := [ true, false ];
+	fi;
+	
+	l := List( C, c -> Filtered( S, h -> chi( [ h ] ) = c ) );
+	
+#	N := List( C, c -> Length( Filtered( A.flats[ 2 ], T -> ( chi( T ) = ( not ( c ) ) ) ) ) );
+	
+	return ForAll( [ 1 .. Length( C ) ], i -> [ ] <> Difference( l[i], Union( Filtered( Circuits( mat ), T -> IsSubset( S, T ) and chi( cl( T ) ) = ( not C[i] ) ) ) ) );
+	
+#	return Length( Union( Filtered( Circuits( mat ), T -> IsSubset( S, T ) and chi( T ) = C[i] ) ) ) < N[i];
+#	return ForAll( l );
+
+end;
+
 ##
 InstallMethod( OrlikSolomonBicomplexRecord,
         [ IsMatroid, IsFunction, IsCapCategory ],
@@ -54,7 +98,9 @@ InstallMethod( OrlikSolomonBicomplexRecord,
     
     rank_m := RankOfMatroid( m );
     
-    m!.flats_per_rank := List( [ 0 .. rank_m ], k -> FlatsOfRank( m, k ) );
+    m!.flats_per_rank := Flats( m );
+    m!.nr_flats_per_rank := List( Flats( m ), Length );
+    #List( [ 0 .. rank_m ], k -> FlatsOfRank( m, k ) );
     
     A.objects := List( [ 0 .. rank_m ], i -> List( [ 0 .. rank_m - i ], j -> [] ) );
     
@@ -62,11 +108,11 @@ InstallMethod( OrlikSolomonBicomplexRecord,
     
     A.differentials_horizontal := List( [ 0 .. rank_m ],
                                     i -> List( [ 0 .. rank_m - i ],
-                                      j -> List( [ 1 .. Size( FlatsOfRankExtended( m, i + j ) ) ], k -> [] ) ) );
+                                      j -> List( [ 1 .. m!.nr_flats_per_rank[i + j + 1] ], k -> [] ) ) );
     
     A.differentials_vertical := List( [ 0 .. rank_m ],
                                     i -> List( [ 0 .. rank_m - i ],
-                                      j -> List( [ 1 .. Size( FlatsOfRankExtended( m, i + j ) ) ], k -> [] ) ) );
+                                      j -> List( [ 1 .. m!.nr_flats_per_rank[i + j + 1] ], k -> [] ) ) );
     
     for k in [ 1 .. rank_m ] do
     	if k = rank_m then
@@ -79,50 +125,63 @@ InstallMethod( OrlikSolomonBicomplexRecord,
 
             SS := Filtered( FlatsOfRankExtended( m, k - 1 ), S -> IsSubset( Sigma, S ) );
             
-            Print( ".\c");
-            
             c := chi( Sigma );
-#            
-#             if c = fail then
-#             	if IsBlueExact( A, Sigma ) and IsRedExact( A, Sigma ) then
-#              		Print( Sigma, " is black exact.\n" );
-#             	else
-# 	             	b := BlueNonExactness( A, Sigma );
-# 	             	r := RedNonExactness( A, Sigma );
-#              		if not IsZero( b ) then
-#              			Print( Sigma, " is black but not blue exact:\n" );
-#              			PrintArray( b );
-#              			Print( "\n" );
-#              		fi;
-#              		if not IsZero( r ) then
-#              			Print( Sigma, " is black but not red exact:\n" );
-#              			PrintArray( r );
-#              			Print( "\n" );
-#              		fi;
-#              	fi;
-#             elif c = true then
-#             	if IsBlueExact( A, Sigma ) then
-#              		Print( Sigma, " is blue exact.\n" );
-#             	else
-# 	            	b := BlueNonExactness( A, Sigma );
-#              		Print( Sigma, " is blue but not blue exact:\n" );
-#              		PrintArray( b );
-#              		Print( "\n" );
-#              	fi;
-#             else
-#             	if IsRedExact( A, Sigma ) then
-#              		Print( Sigma, " is red exact.\n" );
-#             	else
-# 	             	r := RedNonExactness( A, Sigma );
-#              		Print( Sigma, " is red but not red exact:\n" );
-#              		PrintArray( r );
-#              		Print( "\n" );
-#              	fi;
-#             fi;
+            
+            if ValueOption( "check" ) = fail then
+            
+            	Print( ".\c");
+            
+#             elif ValueOption( "check" ) = "euler" then
+#             
+#             	if c = fail then
+#             	
+#             	elif c = true then
+#             		
+#             	else            	
+            
+            else 
+		   
+				if c = fail then
+					if IsBlueExact( A, Sigma ) and IsRedExact( A, Sigma ) then
+						Print( Sigma, " is black exact.\n" );
+					else
+						b := BlueNonExactness( A, Sigma );
+						r := RedNonExactness( A, Sigma );
+						if not IsZero( b ) then
+							Print( Sigma, " is black but not blue exact:\n" );
+							PrintArray( b );
+							Print( "\n" );
+						fi;
+						if not IsZero( r ) then
+							Print( Sigma, " is black but not red exact:\n" );
+							PrintArray( r );
+							Print( "\n" );
+						fi;
+					fi;
+				elif c = true then
+					if IsBlueExact( A, Sigma ) then
+						Print( Sigma, " is blue exact.\n" );
+					else
+						b := BlueNonExactness( A, Sigma );
+						Print( Sigma, " is blue but not blue exact:\n" );
+						PrintArray( b );
+						Print( "\n" );
+					fi;
+				else
+					if IsRedExact( A, Sigma ) then
+						Print( Sigma, " is red exact.\n" );
+					else
+						r := RedNonExactness( A, Sigma );
+						Print( Sigma, " is red but not red exact:\n" );
+						PrintArray( r );
+						Print( "\n" );
+					fi;
+				fi;
+			fi;
             
             if Sigma = A.Smin then
             	M := OrlikSolomonBicomplexDimensions( A, A.Smin );
-            	Print( "\n" );
+            	Print( "\n\n" );
             	PrintArray( M );
             	Print( "\n" );
                 Print( Euler( M ), "\n" );
@@ -660,13 +719,20 @@ InstallMethod( IsBlueExact,
 		
 		return ForAll(
 			[ 0 .. r - 2 ],
-			i -> ForAll(
-				[ 0 .. r - 2 - i ],
-#				j -> IsZero( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) )
-				j -> Dimension( ImageObject( OrlikSolomonBicomplexDifferential( A, S, i, j, i - 1, j ) ) )
-					+ Dimension( ImageObject( OrlikSolomonBicomplexDifferential( A, S, i + 1, j, i, j ) ) )
-					= Dimension( OrlikSolomonBicomplexObject( A, S, i, j ) )
-				)
+			function( j )
+				local ranks;
+				
+				ranks := List( [ 0 .. r - 1 - j ], i -> Dimension( ImageObject( OrlikSolomonBicomplexDifferential( A, S, i, j, i - 1, j ) ) ) );
+				
+				return ForAll(
+					[ 0 .. r - 2 - j ],
+	#				j -> IsZero( OrlikSolomonBicomplexHorizontalHomologyObject( A, S, i, j ) )
+	#				j -> Dimension( ImageObject( OrlikSolomonBicomplexDifferential( A, S, i, j, i - 1, j ) ) )
+	#					+ Dimension( ImageObject( OrlikSolomonBicomplexDifferential( A, S, i + 1, j, i, j ) ) )
+					i -> ranks[i + 1] + ranks[i + 2]
+						= Dimension( OrlikSolomonBicomplexObject( A, S, i, j ) )
+					);
+					end
 		);
 
 end );
