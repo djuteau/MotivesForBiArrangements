@@ -1304,7 +1304,7 @@ end;
 
 CellularArrangement := function( n, w ) 
 	# choice of affine coordinates t_i with (z_1, ..., z_n) = (t_1, t_2, t_3, ..., t_{n-3}, 1, infty, 0)
-	# choice of projective coordinates (t_0, t_1, ..., t_n) with {t_0 = 0} the hyperplane at infinity (for consistency with SimplexArrangement)
+	# choice of projective coordinates (z_0, z_1, ..., z_n) with {z_0 = 0} the hyperplane at infinity (for consistency with SimplexArrangement)
 	local res, i, j, a, b, c;
 	
 	res := [];
@@ -1570,6 +1570,27 @@ IteratedIntegralOrlikSolomonBicomplexRecord := function ( a, default )
 	);
 end;
 
+CellularIntegralOrlikSolomonBicomplexRecord := function ( w, default )
+	return OrlikSolomonBicomplexRecord(
+		CellularArrangement( Length( w ), PermList( w ) ),
+		SimplexArrangement ( Length( w ) - 3 ),
+		default
+	);
+end;
+
+
+##### un test pour Tame #####
+
+m := Matroid( [ [ 1, 0, 0 ], [ 0, 1, 0 ], [ 0, 0, 1 ], [ 1, 0, 1 ], [ 0, 1, 1 ] ], HomalgFieldOfRationals() );
+ 
+chi_m := function (flat)
+ 	if flat in [ [ 1 ], [ 2 ], [ 3 ], [ 1, 2 ], [ 1, 3, 4 ], [ 2, 3, 5 ] ] then return true;
+ 	elif flat in [ [ 4 ], [ 5 ], [ 4, 5 ], [ 1, 2, 3, 4, 5 ] ] then return false;
+ 	else return fail;
+ 	fi;
+ end;
+
+A := OrlikSolomonBicomplexRecord( m, chi_m );;
 
 
 
