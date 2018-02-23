@@ -1,6 +1,6 @@
 #! @Chapter The Orlik-Solomon bicomplex of a bi-arrangement
 
-DeclareGlobalFunction( "ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT" );
+# DeclareGlobalFunction( "ORLIK_SOLOMON_INTERNAL_NR_OF_FLAT" );
 
 ####################################
 ##
@@ -46,17 +46,26 @@ DeclareCategory( "IsProjectiveOrlikSolomonBicomplexRecord",
 #! @Returns a matroid
 DeclareOperation( "Matroid",
         [ IsList, IsHomalgRing ] );
+        
+#! @Description
+#!  The argument is an Orlik-Solomon bicomplex record <A>A</A>. The function computes the corresponding graded motive
+#!  and adds it to the record, assuming the bicomplex is blue or red exact (according to the color of the zero flat).
+#! @Arguments A
+#! @Returns nothing.
+DeclareOperation( "SemisimplifiedMotive",
+	[ IsRecord ] );
 
 #! @Description
-#!  The arguments are a matroid <A>m</A>, and integer <A>k</A> and a boolean <A>b</A> representing
-#!  the default color. The output is a coloring function on the matroid <A>m</A> such that
-#!  the first <A>k</A> hyperplanes are blue, the others are red, and a stratum which can be expressed
-#!  as an intersection of blue hyperplanes is blue, and similarly for red; the strata whose color is
-#!  not determined by those conditions are set to the default color.
-#! @Arguments m, k default
+#!  The arguments are a matroid <A>m</A>, and integer <A>k</A>, a boolean <A>default</A> representing
+#!  the default color, and a boolean <A>last</A> representing the color of the zero flat.
+#!  The output is a coloring function on the matroid <A>m</A> such that
+#!  the first <A>k</A> hyperplanes are blue, the others are red, and a non-zero flat which can be expressed
+#!  as an intersection of blue hyperplanes is blue, and similarly for red; a non-zero flat whose color is
+#!  not determined by those conditions is set to the <A>default</A> color, and the zero flat is set to <A>last</A>.
+#! @Arguments m, k, default, last
 #! @Returns a coloring function
 DeclareOperation( "Coloring",
-	[ IsMatroid, IsInt, IsBool ] );
+	[ IsMatroid, IsInt, IsBool, IsBool ] );
 
 #! @BeginGroup OrlikSolomonBicomplexRecord
 #! @Label for IsMatroid, IsFunction[, IsCapCategory]
@@ -66,8 +75,8 @@ DeclareOperation( "Coloring",
 #! category <A>cat</A>. If no category is specified, then
 #! by default <C>MatrixCategory( HomalgFieldOfRationals() )</C> is used.
 #! Alternatively, the biarrangement may be specified by a list of equations for the blue
-#! hyperplanes, a list of equations for the red hyperplanes, and a default color
-#! for the strata that are not obviously blue or red.
+#! hyperplanes, a list of equations for the red hyperplanes, a default color
+#! for the non-zero flats that are not obviously blue or red, and a color for the zero flat.
 #! @Arguments m, chi, cat
 #! @Returns a record
 DeclareOperation( "OrlikSolomonBicomplexRecord",
@@ -83,7 +92,7 @@ DeclareOperation( "OrlikSolomonBicomplexRecord",
 #! @Arguments L, M, default
 #! @Returns a record
 DeclareOperation( "OrlikSolomonBicomplexRecord",
-        [ IsList, IsList, IsBool ] );
+        [ IsList, IsList, IsBool, IsBool ] );
 #! @EndGroup
 
 #! @Description
@@ -94,35 +103,43 @@ DeclareOperation( "OrlikSolomonBicomplexRecord",
 DeclareOperation( "OrlikSolomonBicomplex",
         [ IsRecord, IsList ] );
         
-DeclareOperation( "RedMultizetaBiOS",
-        [ IsList, IsCapCategory ] );
+# DeclareOperation( "RedMultizetaBiOS",
+#        [ IsList, IsCapCategory ] );
 
-DeclareOperation( "RedMultizetaBiOS",
-        [ IsList ] );
+# DeclareOperation( "RedMultizetaBiOS",
+#        [ IsList ] );
 
-DeclareOperation( "BlueMultizetaBiOS",
-        [ IsList, IsCapCategory ] );
+# DeclareOperation( "BlueMultizetaBiOS",
+#        [ IsList, IsCapCategory ] );
 
-DeclareOperation( "BlueMultizetaBiOS",
-        [ IsList ] );
+# DeclareOperation( "BlueMultizetaBiOS",
+#        [ IsList ] );
 
-DeclareOperation( "MultizetaBiOS",
-        [ IsList, IsCapCategory ] );
+# DeclareOperation( "MultizetaBiOS",
+#        [ IsList, IsCapCategory ] );
 
-DeclareOperation( "MultizetaBiOS",
-        [ IsList ] );
-        
-DeclareOperation( "CellularBiArrangement",
-		[ IsInt, IsPerm, IsBool ] );
+# DeclareOperation( "MultizetaBiOS",
+#        [ IsList ] );
 
-DeclareOperation( "CellularBiArrangement",
+#! @Description
+DeclareOperation( "CellularArrangement",
 		[ IsInt, IsPerm ] );
-		
-DeclareOperation( "CellMotive",
-		[ IsList, IsBool ] );
 
-DeclareOperation( "CellMotive",
+#! @Description
+DeclareOperation( "IteratedIntegralArrangement",
 		[ IsList ] );
+
+#! @Description
+DeclareOperation( "SimplexArrangement",
+		[ IsInt ] );
+
+#! @Description
+DeclareOperation( "CellularIntegralOrlikSolomonBicomplexRecord",
+		[ IsList, IsBool, IsBool ] );
+
+#! @Description
+DeclareOperation( "IteratedIntegralOrlikSolomonBicomplexRecord",
+		[ IsList, IsBool, IsBool ] );
 
 
 ####################################
@@ -138,103 +155,131 @@ DeclareOperation( "CellMotive",
 ##
 ####################################
 
-#! @Description
-#! The arguments are a matroid <C>m</C> and an integer $k$.
-#! The output is the list of flats of rank $k$ in <C>m</C>.
-#! The function uses <C>FlatsOfRank</C>, but also returns
-#! a result (the empty list) if $k$ is too large or negative.
-#! @Arguments m, k
-#! @Returns a list of flats
-DeclareOperation( "FlatsOfRankExtended",
-		[ IsMatroid, IsInt ] );
-
-#! @Description
-#! The argument is a boolean (<C>true</C>, <C>false</C> or <C>fail</C>).
-#! The output is the color it represents (blue, red or black respectively).
-#! In terms of sheaf operations, they correspond to $j_*$, $j_!$ and $j_{!*}$.
-#! @Arguments b
-#! @Returns a string 
-DeclareOperation( "ColorBool",
-		[ IsBool ] );
-
-#! @Group DisplayColoring
-#! @Label for IsMatroid, IsFunction | IsOrlikSolomonBicomplexRecord
-#! @Description
-#! The arguments are a matroid and a coloring function in the first version,
-#! an Orlik-Solomon bicomplex record in the second version.
-#! The function displays the colors of all the flats.
-#! The colors are given by a boolean: <C>true</C> means <E>blue</E>,
-#! <C>false</C> means <E>red</E>, <C>fail</C> means <E>black</E>.
-#! @Arguments m, chi
-#! @Returns displays all flats and their colors
-DeclareOperation( "DisplayColoring",
-		[ IsMatroid, IsFunction ] );
-
-#! @Group DisplayColoring
-#! @Arguments A
-DeclareOperation( "DisplayColoring",
-		[ IsRecord ] );
-#		[ IsOrlikSolomonBicomplexRecord ] );
-
-
 #! @BeginGroup OrlikSolomonBicomplexObject
 #! @Description
 #!  The arguments are an Orlik-Solomon bicomplex record <A>A</A>, a list <A>S</A> representing a flat,
 #!  and integers <A>i</A> and <A>j</A> denoting a position in the bicomplex.
-#!  The output is the object representing the local contribution of the flat at the position $(i,j)$.
+#!  The output is the object at the position $(i,j)$ in the local Orlik-Solomon bicomplex
+#!  of the flat $S$ of codimension $k$ and number $s$.
 #!  Although it is not an attribute because there are several arguments, it has the role of an attribute,
 #!  and the corresponding tester and setter are implemented. For the setter, the additional argument
-#!  <A>V</A> is the vector space to be stored.
-#! @Arguments A, S, i, j
+#!  <A>V</A> is the vector space to be stored. On the other hand, in that case $k = i + j $ is omitted.
+#! @Arguments A, FG, i, j, k, s
 #! @Returns a vector space (or an object in the CAP abelian category attached to <A>A</A>).
 DeclareOperation( "OrlikSolomonBicomplexObject",
-		[ IsRecord, IsList, IsInt, IsInt ] );
+		[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt ] );
 
-#! @Arguments A, S, i, j
+#! @Arguments A, FG, i, j, k, s
 DeclareOperation( "HasOrlikSolomonBicomplexObject",
-		[ IsRecord, IsList, IsInt, IsInt ] );
+		[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt ] );
 
-#! @Arguments A, S, i, j, V
+#! @Arguments A, FG, i, j, s, V
 DeclareOperation( "SetOrlikSolomonBicomplexObject",
-		[ IsRecord, IsList, IsInt, IsInt, IsCapCategoryObject ] );
+		[ IsRecord, IsString, IsInt, IsInt, IsInt, IsCapCategoryObject ] );
 
 #! @EndGroup
 
 #! @BeginGroup OrlikSolomonBicomplexDifferentialComponent_group
 #! @Description
-#!  The arguments are an Orlik-Solomon bicomplex record <A>A</A>, a list <A>S</A> (resp. <A>T</A>) representing a flat,
-#!  and integers <A>i</A> and <A>j</A> (resp. <A>k</A> and <A>l</A>) denoting a position in the bicomplex.
-#!  The output is the morphism between the local contributions of the flats <A>S</A> and <A>T</A>
-#!  at the respective positions $(i,j)$ and $(k,l)$.
+#!  The arguments are an Orlik-Solomon bicomplex record <A>A</A>, a string <A>FG</A>,
+#!  integers <A>i</A> and <A>j</A> denoting a position in the bicomplex,
+#!  and integers <A>s</A> and <A>t</A> denoting two flats $S$ and $T$ of codimension $i+j$,
+#!  The output is the morphism starting at position $(i,j)$ between the local contributions
+#!  of the flats $S$ and $T$.
 #!  Although it is not an attribute because there are several arguments, it has the role of an attribute,
 #!  and the corresponding tester and setter are implemented. For the setter, the additional argument
 #!  <A>f</A> is the linear map to be stored.
-#! @Arguments A, S, i, j, T, k, l
+#! @Arguments A, FG, i, j, s, t
 #! @Returns a linear map (or a morphism in the CAP abelian category attached to <A>A</A>).
-DeclareGlobalFunction( "OrlikSolomonBicomplexDifferentialComponent" );
+DeclareOperation( "OrlikSolomonBicomplexHorizontalDifferentialComponent",
+		[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt ] ); 
 
-#! @Arguments A, S, i, j, T, k, l
-DeclareGlobalFunction( "HasOrlikSolomonBicomplexDifferentialComponent" );
+DeclareOperation( "OrlikSolomonBicomplexVerticalDifferentialComponent",
+		[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt ] ); 
 
-#! @Arguments A, S, i, j, T, k, l, f
-DeclareGlobalFunction( "SetOrlikSolomonBicomplexDifferentialComponent" );
+DeclareOperation( "HasOrlikSolomonBicomplexHorizontalDifferentialComponent",
+		[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt ] ); 
+
+DeclareOperation( "HasOrlikSolomonBicomplexVerticalDifferentialComponent",
+		[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt ] );
+
+#! @Arguments A, FG, i, j, s, t, f
+DeclareGlobalFunction( "SetOrlikSolomonBicomplexHorizontalDifferentialComponent" );
+
+DeclareGlobalFunction( "SetOrlikSolomonBicomplexVerticalDifferentialComponent" );
+
 #! @EndGroup
 
+#! @BeginGroup Differentials
 #! @Description
-#!  The arguments are an Orlik-Solomon bicomplex record <A>A</A>, a list <A>S</A> representing a flat,
-#!  and integers <A>i</A> and <A>j</A> (resp. <A>k</A> and <A>l</A>) denoting a position in the bicomplex.
-#!  The output is the morphism between the the objects at the respective positions
-#!  $(i,j)$ and $(k,l)$ in the global Orlik-Solomon bicomplex for the flat <A>S</A>.
+#!  The arguments are an Orlik-Solomon bicomplex record <A>A</A>,
+#!  a string <A>FG</A> equal to "F" or "G",
+#!  integers <A>i</A> and <A>j</A> denoting a position,
+#!  an integer <A>k</A> denoting the codimension of the flat S,
+#!  and an integer <A>s</A> denoting the number of S
+#!  in the list of flats of codimension <A>k</A>.
+#!  The output is the horizontal or vertical morphism starting at the position
+#!  $(i,j)$ in the local Orlik-Solomon bicomplex for the flat <A>S</A>, corresponding to the
+#!  the sheaf <A>FG</A>: for "F", all the black strata are set red, while for "G" all the black
+#! strata are set blue.
 #!
 #!  A tester and setter were implemented, but it turned out to be more efficient not to store the result
 #!  (if non-zero, it is a direct sum of stored components).
-#! @Arguments A, S, i, j, k, l
+#! @Arguments A, FG, i, j, k, s
 #! @Returns a linear map (or a morphism in the CAP abelian category attached to <A>A</A>).
-DeclareGlobalFunction( "OrlikSolomonBicomplexDifferential" );
+DeclareOperation( "OrlikSolomonBicomplexHorizontalDifferential",
+		[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt ]);
 
-#DeclareGlobalFunction( "HasOrlikSolomonBicomplexDifferential" );
+DeclareOperation( "OrlikSolomonBicomplexVerticalDifferential",
+		[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt ]);
+#! @EndGroup
 
-#DeclareGlobalFunction( "SetOrlikSolomonBicomplexDifferential" );
+#! @BeginGroup Morphisms
+#! @Description
+#!  Returns the morphism from the "F" to the "G" version of the object at $(i,j)$
+#!  for the local Orlik-Solomon bicomplex for the stratum S defined by its codimension <A>k</A>
+#!  and its numnber <A>s</A>.
+#! @Arguments A, FG, i, j, k, s
+DeclareOperation( "OrlikSolomonBicomplexMorphism",
+		[ IsRecord, IsInt, IsInt, IsInt, IsInt ]);
+
+#! @Arguments A, FG, i, j, s, f
+		
+DeclareOperation( "SetOrlikSolomonBicomplexMorphism",
+		[ IsRecord, IsInt, IsInt, IsInt, IsCapCategoryMorphism ]);
+#! @EndGroup
+
+#! @Description
+#! @Arguments mat, chi, k, s
+DeclareOperation( "IsTameFlat",
+	[ IsMatroid, IsFunction, IsInt, IsInt ] );
+	
+
+#! @Description
+#! @Arguments mat, chi
+DeclareOperation( "IsTame",
+ 	[ IsMatroid, IsFunction ] );
+
+#! @Description
+#! @Arguments L, M, default, last
+DeclareOperation( "IsTameBiarrangement",
+	[ IsList, IsList, IsBool, IsBool ] );
+
+#! @Description
+#! @Arguments w, default, last
+DeclareOperation( "IsTameCellularIntegralBiarrangement",
+	[ IsList, IsBool, IsBool ] );
+
+#! @Description
+#! @Arguments a, default, last
+DeclareOperation( "IsTameIteratedIntegralBiarrangement",
+	[ IsList, IsBool, IsBool ] );
+
+####################################
+##
+#! @Section Obsolete
+##
+####################################
 
 #! @BeginGroup OrlikSolomonBicomplexHomologyObjects
 #! @Description
@@ -298,4 +343,6 @@ DeclareOperation( "OrlikSolomonBicomplexDimensions",
 #! @Arguments mat
 DeclareOperation( "Euler",
 		[ IsList ] );
+		
+
 
