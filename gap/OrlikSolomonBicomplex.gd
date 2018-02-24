@@ -94,14 +94,6 @@ DeclareOperation( "OrlikSolomonBicomplexRecord",
 DeclareOperation( "OrlikSolomonBicomplexRecord",
         [ IsList, IsList, IsBool, IsBool ] );
 #! @EndGroup
-
-#! @Description
-#! The arguments are an Orlik-Solomon bicomplex record and a list representing a flat.
-#! The output is a bicomplex.
-#! @Arguments A, S
-#! @Returns a bicomplex 
-DeclareOperation( "OrlikSolomonBicomplex",
-        [ IsRecord, IsList ] );
         
 # DeclareOperation( "RedMultizetaBiOS",
 #        [ IsList, IsCapCategory ] );
@@ -122,22 +114,45 @@ DeclareOperation( "OrlikSolomonBicomplex",
 #        [ IsList ] );
 
 #! @Description
+#!  The arguments are an integer <A>n</A> and a permutation <A>w</A> on $n$ letters.
+#!  The output is a matrix giving the equations of the hyperplanes of the corresponding
+#!  cellular arrangement.
+#! @Arguments n, w
+#! Returns a matrix
 DeclareOperation( "CellularArrangement",
 		[ IsInt, IsPerm ] );
 
 #! @Description
+#!  The argument is a list of integers <A>a</A>. The output is a matrix giving the equations
+#!  of the hyplerplanes of the corresponding iterated integral arrangement.
+#! @Arguments a
+#! @Returns a matrix
 DeclareOperation( "IteratedIntegralArrangement",
 		[ IsList ] );
 
 #! @Description
+#!  The argument is an integer <A>n</A>. The output is a matrix giving the equations
+#!  of the hyplerplanes of the standard simplex in the $n$-dimensional projective space.
+#! @Arguments n
+#! @Returns a matrix
 DeclareOperation( "SimplexArrangement",
 		[ IsInt ] );
 
 #! @Description
+#!  The arguments are a list <A>w</A> representing a permutation, and two Booleans representing
+#!  the default color and the color of the zero flat. The output is the corresponding
+#!  cellular integral Orlik-Solomon bicomplex record.
+#! @Arguments w, default, last
+#! Returns an Orlik-Solomon bicomplex record
 DeclareOperation( "CellularIntegralOrlikSolomonBicomplexRecord",
 		[ IsList, IsBool, IsBool ] );
 
 #! @Description
+#!  The arguments are a list of integers <A>a</A>, and two Booleans representing
+#!  the default color and the color of the zero flat. The output is the corresponding
+#!  iterated integral Orlik-Solomon bicomplex record.
+#! @Arguments a, default, last
+#! Returns an Orlik-Solomon bicomplex record
 DeclareOperation( "IteratedIntegralOrlikSolomonBicomplexRecord",
 		[ IsList, IsBool, IsBool ] );
 
@@ -238,30 +253,45 @@ DeclareOperation( "OrlikSolomonBicomplexVerticalDifferential",
 #! @Description
 #!  Returns the morphism from the "F" to the "G" version of the object at $(i,j)$
 #!  for the local Orlik-Solomon bicomplex for the stratum S defined by its codimension <A>k</A>
-#!  and its numnber <A>s</A>.
+#!  and its numnber <A>s</A>. In the setter, $k = i + j$ is not needed, but the linear map to be stored
+#!  is required.
 #! @Arguments A, FG, i, j, k, s
+#! @Returns a linear map (or a morphism in the CAP abelian category attached to <A>A</A>).
 DeclareOperation( "OrlikSolomonBicomplexMorphism",
 		[ IsRecord, IsInt, IsInt, IsInt, IsInt ]);
 
+#! @Description
 #! @Arguments A, FG, i, j, s, f
-		
 DeclareOperation( "SetOrlikSolomonBicomplexMorphism",
 		[ IsRecord, IsInt, IsInt, IsInt, IsCapCategoryMorphism ]);
 #! @EndGroup
 
 #! @Description
+#!  The arguments are a matroid <A>mat</A>, a coloring function <A>chi</A>, and
+#!  the codimension <A>k</A> and number <A>s</A> of a flat $S$. The function says
+#!  whether the local bi-arrangement of the flat $S$ is tame.
+#! @Returns a Boolean
 #! @Arguments mat, chi, k, s
 DeclareOperation( "IsTameFlat",
 	[ IsMatroid, IsFunction, IsInt, IsInt ] );
 	
 
 #! @Description
+#! 	The arguments are a matroid <A>mat</A> and a coloring function <A>chi</A>.
+#! 	The output says whether the bi-matroid is tame. If not, the function also displays
+#! 	the flats which are not tame, along with their codimension and number.
+#! @Returns a Boolean
 #! @Arguments mat, chi
 DeclareOperation( "IsTame",
  	[ IsMatroid, IsFunction ] );
 
 #! @Description
+#!  The arguments are two matrices (lists of equations for the blue/red hyperplanes), and two
+#!  Booleans representing the default color and color of the zero flat.
+#!  The output says whether the bi-arrangement is tame. If not, the function also displays
+#!  the flats which are not tame, along with their codimension and number.
 #! @Arguments L, M, default, last
+#! @Returns a Boolean
 DeclareOperation( "IsTameBiarrangement",
 	[ IsList, IsList, IsBool, IsBool ] );
 
@@ -343,6 +373,14 @@ DeclareOperation( "OrlikSolomonBicomplexDimensions",
 #! @Arguments mat
 DeclareOperation( "Euler",
 		[ IsList ] );
+		
+#! @Description
+#! The arguments are an Orlik-Solomon bicomplex record and a list representing a flat.
+#! The output is a bicomplex.
+#! @Arguments A, S
+#! @Returns a bicomplex 
+DeclareOperation( "OrlikSolomonBicomplex",
+        [ IsRecord, IsList ] );
 		
 
 
