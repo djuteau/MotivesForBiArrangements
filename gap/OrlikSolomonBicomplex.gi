@@ -1578,19 +1578,49 @@ CellularIntegralOrlikSolomonBicomplexRecord := function ( w, default )
 	);
 end;
 
+LoadPackage( "Bicomplex" );
+
+SemiSimplifiedMotiveByRectangles := function( A )
+
+	local res, n, k, i, j, r, tot, B;
+
+	res := [ ];
+	n := RankOfMatroid( A.matroid ) - 1;
+	
+	for k in [ 0 .. n ] do
+		B := DoubleChainComplex(
+			A.cat,
+			function( i, j ) return OrlikSolomonBicomplexDifferential( A, A.Smin, i, -j, i - 1, -j ); end,
+			function( i, j ) return OrlikSolomonBicomplexDifferential( A, A.Smin, i, -j, i, -j - 1 ); end
+		);
+		SetAboveBound( B, 1 );
+		SetBelowBound( B, -n - 2);
+		SetLeftBound( B, -1 );
+		SetRightBound( B, n + 2 );
+	
+		tot := TotalChainComplex( B );
+	
+	res[k + 1] := List( [ 0 .. 2 * n ], r -> Dimension( DefectOfExactnessAt( tot, 2*k - r ) ) );
+	
+	od;
+	
+	return res;
+
+end;
+
 
 ##### un test pour Tame #####
 
-m := Matroid( [ [ 1, 0, 0 ], [ 0, 1, 0 ], [ 0, 0, 1 ], [ 1, 0, 1 ], [ 0, 1, 1 ] ], HomalgFieldOfRationals() );
- 
-chi_m := function (flat)
- 	if flat in [ [ 1 ], [ 2 ], [ 3 ], [ 1, 2 ], [ 1, 3, 4 ], [ 2, 3, 5 ] ] then return true;
- 	elif flat in [ [ 4 ], [ 5 ], [ 4, 5 ], [ 1, 2, 3, 4, 5 ] ] then return false;
- 	else return fail;
- 	fi;
- end;
-
-A := OrlikSolomonBicomplexRecord( m, chi_m );;
+# m := Matroid( [ [ 1, 0, 0 ], [ 0, 1, 0 ], [ 0, 0, 1 ], [ 1, 0, 1 ], [ 0, 1, 1 ] ], HomalgFieldOfRationals() );
+#  
+# chi_m := function (flat)
+#  	if flat in [ [ 1 ], [ 2 ], [ 3 ], [ 1, 2 ], [ 1, 3, 4 ], [ 2, 3, 5 ] ] then return true;
+#  	elif flat in [ [ 4 ], [ 5 ], [ 4, 5 ], [ 1, 2, 3, 4, 5 ] ] then return false;
+#  	else return fail;
+#  	fi;
+#  end;
+# 
+# A := OrlikSolomonBicomplexRecord( m, chi_m );;
 
 
 
