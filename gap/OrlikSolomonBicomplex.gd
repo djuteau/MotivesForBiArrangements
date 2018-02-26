@@ -363,7 +363,7 @@ DeclareOperation( "RedNonExactness",
 #! @Arguments A, S
 #! @Returns a matrix
 DeclareOperation( "OrlikSolomonBicomplexDimensions",
-		[ IsRecord, IsList ] );
+		[ IsRecord, IsString ] );
 
 #! @Description
 #! The arguments is a matrix recording the dimensions of a projective Orlik-Solomon bicomplex.

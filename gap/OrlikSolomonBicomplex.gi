@@ -700,7 +700,7 @@ end );
 
 InstallMethod( OrlikSolomonBicomplexDimensions,
 
-	[ IsRecord, IsList ],
+	[ IsRecord, IsString ],
 
 	function( A, FG )
 		local r, res, i, j;
@@ -851,6 +851,86 @@ InstallMethod( IsTameIteratedIntegralBiarrangement,
 		);
 	
 end );
+
+SemiSimplifiedMotiveByRectangles :=
+	function( A, FG )
+	
+	local n, rows, k, j, i, phi, res, tot;
+	
+	n := A.rank - 1;
+	
+	res := [ ];
+
+	for k in [ 1 .. n - 1 ] do
+		rows := List(
+			[ 0 .. n - k ],
+			j -> ChainComplex(
+				List(
+					[ 1 .. k ],
+					i -> OrlikSolomonBicomplexHorizontalDifferential( A, FG, i, j, n + 1, 1 )
+				),
+				1
+			)
+		);
+		
+		phi := List(
+			[ 1 .. n - k ],
+			j -> ChainMorphism(
+				rows[j],
+				rows[j + 1],
+				List( [ 0 .. k ], i -> OrlikSolomonBicomplexVerticalDifferential( A, FG, i, j - 1, n + 1, 1 ) ),
+				0
+				)
+		);
+		
+		tot := TotalComplex( HomologicalBicomplex( ChainComplex( Reversed( phi ), -1 ) ) );
+		
+		res[k] := List( [ 0 .. 2 * n ], r -> Dimension( DefectOfExactnessAt( tot, 2 * k - r ) ) );
+	od;
+	
+	res := Concatenation(
+		[ List(
+			[ 0 .. 2 * n ],
+			r -> Dimension( DefectOfExactnessAt(
+				ChainComplex( List( Reversed( [ 0 .. n - 1 ] ), j -> OrlikSolomonBicomplexVerticalDifferential( A, FG, 0, j, n + 1, 1 ) ), -n + 1 ),
+				-r
+			) )
+		) ],
+		res,
+		[ List(
+			[ 0 .. 2 * n ],
+			r -> Dimension( DefectOfExactnessAt(
+				ChainComplex( List( [ 1 .. n ], i -> OrlikSolomonBicomplexHorizontalDifferential( A, FG, i, 0, n + 1, 1 ) ), 1 ),
+				r
+			) )
+		) ]
+	);
+	
+	return res;
+	
+end;
+
+DisplayOrlikSolomonBicomplexDifferentials := function( A )
+	local n, i, j;
+	
+	n := A.rank - 1;
+
+	for j in [ 0 .. n ] do
+		for i in [ 0 .. n - j ] do
+			Print( JoinStringsWithSeparator( [ i + 1, j, i, j ] ), "\n");
+			Display( OrlikSolomonBicomplexHorizontalDifferential( A, "F", i + 1, j, n + 1, 1 ) );
+			Print( "\n" );
+		od;
+	od;
+	
+	for i in [ 0 .. n ] do
+		for j in [ 0 .. n - i ] do
+			Print( JoinStringsWithSeparator( [ i, j, i, j + 1 ] ), "\n");
+			Display( OrlikSolomonBicomplexVerticalDifferential( A, "F", i, j, n + 1, 1 ) );
+			Print( "\n" );		od;
+	od;
+end;
+
 
 
 # IsTameCellularIntegralBiarrangement( [9, 2, 4, 1, 8, 6, 3, 5, 7], fail, true );
