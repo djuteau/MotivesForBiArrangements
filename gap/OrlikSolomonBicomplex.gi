@@ -22,6 +22,52 @@ InstallMethod( Matroid,
 
 end );
 
+InstallMethod( ArrangementFromGraph,
+
+	[ IsInt, IsList ],
+
+	function( n, L )
+	
+	local res, m, i, j;
+	
+	res := [ ];
+	
+	m := Length( L );
+	
+	for i in [ 1 .. m ] do
+		res[i] := [ ];
+		for j in [ 1 .. n + 1 ] do
+			res[i][j] := 0;
+		od;
+		if L[i][1] > 1 then
+			res[i][L[i][1] - 1] := -1;
+		fi;
+		if L[i][2] > 1 then
+			res[i][L[i][2] - 1] := 1;
+		fi;
+	od;
+	
+	return res;
+
+end );
+
+InstallMethod( ProjectiveSpaceOrlikSolomonBicomplexRecord,
+
+    [ IsInt, IsList, IsList ],
+
+	function ( n, L, M )
+	
+	return OrlikSolomonBicomplexRecord(
+		ArrangementFromGraph( n, L ),
+		ArrangementFromGraph ( n, M ),
+		fail,
+		true
+	);
+	
+end );
+
+
+
 InstallMethod( SemisimplifiedMotive,
 
 	[ IsRecord ],
@@ -305,7 +351,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
 		
 		DeactivateCachingOfCategory( matrixcat );
 		
-		DisableBasicOperationTypeCheck( matrixcat );
+		DisableInputSanityChecks( matrixcat );
 		
 		SetCachingToCrisp( matrixcat, "ZeroMorphism" );
 		
@@ -395,6 +441,10 @@ InstallMethod( OrlikSolomonBicomplexHorizontalDifferential,
 			return UniversalMorphismIntoZeroObject( OrlikSolomonBicomplexObject( A, FG, i, j, k, s ) );
 		fi;
 		
+		if i + j > k then
+			return UniversalMorphismFromZeroObject( OrlikSolomonBicomplexObject( A, FG, i - 1, j, k, s ) );
+		fi;
+		
 		tt := Positions( A.incidence[k + 1][i + j + 1][s], true ); 
 		uu := Positions( A.incidence[k + 1][i + j][s], true );
 		return MorphismBetweenDirectSums(
@@ -418,6 +468,9 @@ InstallMethod( OrlikSolomonBicomplexVerticalDifferential,
 			return UniversalMorphismFromZeroObject( OrlikSolomonBicomplexObject( A, FG, i, j + 1, k, s ) );
 		fi;
 
+		if i + j >= k then
+			return UniversalMorphismIntoZeroObject( OrlikSolomonBicomplexObject( A, FG, i, j, k, s ) );
+		fi;
 		
 		tt := Positions( A.incidence[k + 1][i + j + 2][s], true ); 
 		uu := Positions( A.incidence[k + 1][i + j + 1][s], true );
@@ -853,20 +906,21 @@ InstallMethod( IsTameIteratedIntegralBiarrangement,
 end );
 
 SemiSimplifiedMotiveByRectangles :=
-	function( A, FG )
+	function( A )
 	
-	local n, rows, k, j, i, phi, res, tot;
+	local n, rows, k, j, i, phi, res, morphism, L, FG;
 	
 	n := A.rank - 1;
 	
 	res := [ ];
+	
+	for FG in [ "F", "G" ] do
 
-	for k in [ 1 .. n - 1 ] do
 		rows := List(
-			[ 0 .. n - k ],
+			[ 0 .. n ],
 			j -> ChainComplex(
 				List(
-					[ 1 .. k ],
+					[ 1 .. n + 1 ],
 					i -> OrlikSolomonBicomplexHorizontalDifferential( A, FG, i, j, n + 1, 1 )
 				),
 				1
@@ -874,43 +928,103 @@ SemiSimplifiedMotiveByRectangles :=
 		);
 		
 		phi := List(
-			[ 1 .. n - k ],
+			[ 1 .. n ],
 			j -> ChainMorphism(
 				rows[j],
 				rows[j + 1],
-				List( [ 0 .. k ], i -> OrlikSolomonBicomplexVerticalDifferential( A, FG, i, j - 1, n + 1, 1 ) ),
+				List( [ 0 .. n ], i -> OrlikSolomonBicomplexVerticalDifferential( A, FG, i, j - 1, n + 1, 1 ) ),
 				0
 				)
 		);
 		
-		tot := TotalComplex( HomologicalBicomplex( ChainComplex( Reversed( phi ), -1 ) ) );
+		A.(FG).complex := ChainComplex( Reversed( phi ), -1 );
+		A.(FG).bicomplex := HomologicalBicomplex( ChainComplex( Reversed( phi ), -1 ) );
 		
-		res[k] := List( [ 0 .. 2 * n ], r -> Dimension( DefectOfExactnessAt( tot, 2 * k - r ) ) );
 	od;
+
+ L := List( [ -n - 1 .. 0 ], i -> ChainMorphism( A.G.complex[i], A.F.complex[i], List( [ 0 .. n + 1 - i ], j -> OrlikSolomonBicomplexMorphism( A, -j, i, n + 1, 1 ) ), 0 ) );
+morphism := ChainMorphism( A.G.complex, A.F.complex, L, -n - 1 );
+morphism := BicomplexMorphism( morphism );
 	
-	res := Concatenation(
-		[ List(
-			[ 0 .. 2 * n ],
-			r -> Dimension( DefectOfExactnessAt(
-				ChainComplex( List( Reversed( [ 0 .. n - 1 ] ), j -> OrlikSolomonBicomplexVerticalDifferential( A, FG, 0, j, n + 1, 1 ) ), -n + 1 ),
-				-r
-			) )
-		) ],
-		res,
-		[ List(
-			[ 0 .. 2 * n ],
-			r -> Dimension( DefectOfExactnessAt(
-				ChainComplex( List( [ 1 .. n ], i -> OrlikSolomonBicomplexHorizontalDifferential( A, FG, i, 0, n + 1, 1 ) ), 1 ),
-				r
-			) )
-		) ]
-	);
-	
-	return res;
-	
+	return morphism;
 end;
 
-DisplayOrlikSolomonBicomplexDifferentials := function( A )
+SemiSimplifiedMotiveByRectangles :=
+	function( A )
+	
+	local n, rows, cols, k, j, i, phi, morphism, L, FG;
+	
+	n := A.rank - 1;
+	
+	for FG in [ "F", "G" ] do
+
+		cols := List(
+			[ 0, -1 .. -n ],
+			i -> ChainComplex(
+				List(
+					[ 0 .. n ],
+					j -> OrlikSolomonBicomplexVerticalDifferential( A, FG, -i, j, n + 1, 1 )
+				),
+				1
+			)
+		);
+		
+		phi := List(
+			[ 1 .. n ],
+			j -> ChainMorphism(
+				rows[j],
+				rows[j + 1],
+				List( [ 0 .. n ], i -> OrlikSolomonBicomplexVerticalDifferential( A, FG, i, j - 1, n + 1, 1 ) ),
+				0
+				)
+		);
+		
+		A.(FG).complex := ChainComplex( Reversed( phi ), -1 );
+		A.(FG).bicomplex := HomologicalBicomplex( ChainComplex( Reversed( phi ), -1 ) );
+		
+	od;
+
+ L := List( [ -n - 1 .. 0 ], i -> ChainMorphism( A.G.complex[i], A.F.complex[i], List( [ 0 .. n + 1 - i ], j -> OrlikSolomonBicomplexMorphism( A, -j, i, n + 1, 1 ) ), 0 ) );
+morphism := ChainMorphism( A.G.complex, A.F.complex, L, -n - 1 );
+morphism := BicomplexMorphism( morphism );
+	
+	return morphism;
+end;
+		
+# 		for k in [ 0 .. n ] do
+# 			BrutalTruncationAboveFunctor( CapCategory( complex[1] ), k + 1 );
+# 			BrutalTruncation( BruntalTruncationFunctorial
+# 		
+# 		A.(FG).total := TotalComplex( A.(FG).bicomplex );
+# 		
+# 		res[k] := List( [ 0 .. 2 * n ], r -> Dimension( DefectOfExactnessAt( tot, 2 * k - r ) ) );
+# 	od;
+# 	
+# 	res := Concatenation(
+# 		[ List(
+# 			[ 0 .. 2 * n ],
+# 			r -> Dimension( DefectOfExactnessAt(
+# 				ChainComplex( List( Reversed( [ 0 .. n - 1 ] ), j -> OrlikSolomonBicomplexVerticalDifferential( A, FG, 0, j, n + 1, 1 ) ), -n + 1 ),
+# 				-r
+# 			) )
+# 		) ],
+# 		res,
+# 		[ List(
+# 			[ 0 .. 2 * n ],
+# 			r -> Dimension( DefectOfExactnessAt(
+# 				ChainComplex( List( [ 1 .. n ], i -> OrlikSolomonBicomplexHorizontalDifferential( A, FG, i, 0, n + 1, 1 ) ), 1 ),
+# 				r
+# 			) )
+# 		) ]
+# 	);
+# 	
+# 	od;
+# 	
+# 	return res;
+# 	
+# end;
+
+DisplayOrlikSolomonBicomplexDifferentials := function( A, FG )
 	local n, i, j;
 	
 	n := A.rank - 1;
@@ -918,7 +1032,7 @@ DisplayOrlikSolomonBicomplexDifferentials := function( A )
 	for j in [ 0 .. n ] do
 		for i in [ 0 .. n - j ] do
 			Print( JoinStringsWithSeparator( [ i + 1, j, i, j ] ), "\n");
-			Display( OrlikSolomonBicomplexHorizontalDifferential( A, "F", i + 1, j, n + 1, 1 ) );
+			Display( OrlikSolomonBicomplexHorizontalDifferential( A, FG, i + 1, j, n + 1, 1 ) );
 			Print( "\n" );
 		od;
 	od;
@@ -926,11 +1040,52 @@ DisplayOrlikSolomonBicomplexDifferentials := function( A )
 	for i in [ 0 .. n ] do
 		for j in [ 0 .. n - i ] do
 			Print( JoinStringsWithSeparator( [ i, j, i, j + 1 ] ), "\n");
-			Display( OrlikSolomonBicomplexVerticalDifferential( A, "F", i, j, n + 1, 1 ) );
+			Display( OrlikSolomonBicomplexVerticalDifferential( A, FG, i, j, n + 1, 1 ) );
 			Print( "\n" );		od;
 	od;
 end;
 
+CyclicIntervalFromList := function( list, k, l )
+ local n;
+ n := Length( list );
+ if k + l - 1 <= n then
+  return list{[ k .. k + l - 1 ]};
+ else
+  return list{Concatenation( [ k .. n ], [ 1 .. l - n + k - 1 ] )};
+ fi;
+end;
+
+IsCyclicInterval := function ( list, n )
+    local  p, k;
+    p := Set( list );
+    k := Length( p );
+    if p[1] > 1 then
+        return p = [ p[1] .. p[1] + k - 1 ];
+    else
+        return IsCyclicInterval( Difference( [ 1 .. n ], p ), n );
+    fi;
+end;
+
+
+DihedralGroupPerm := function( n )
+ return Group( PermList( Concatenation( [ 2 .. n ], [ 1 ] ) ), PermList( [ n, n - 1 .. 1 ] ) );
+end;
+
+IsConvergentConfiguration := function( pi )
+ local n, std;
+ n := Length( pi );
+ std := [ 1 .. n];
+ return ForAll( [ 2 .. n - 2 ], k -> ForAll( [ 1 .. n ], i -> not IsCyclicInterval( CyclicIntervalFromList( pi, i, k ), n ) ) );
+end;
+
+
+ConvergentConfigurations := function( n )
+ local sym, dih, reps;
+ sym := SymmetricGroup( n );
+ dih := DihedralGroupPerm( n );
+ reps := List( DoubleCosetRepsAndSizes( sym, dih, dih ), i -> i[1] );
+ return Filtered( List( reps, w -> ListPerm( w, n ) ), IsConvergentConfiguration );
+end;
 
 
 # IsTameCellularIntegralBiarrangement( [9, 2, 4, 1, 8, 6, 3, 5, 7], fail, true );

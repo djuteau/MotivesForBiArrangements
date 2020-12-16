@@ -113,9 +113,8 @@ Dependencies := rec(
   GAP := ">= 4.8",
   NeededOtherPackages := [ [ "GAPDoc", ">= 1.5" ],
                    [ "alcove", ">= 2016-09-21" ],
-                   [ "M2", ">= 2017.05.01" ],
                    [ "LinearAlgebraForCAP", ">= 2018.02.07" ],
-                   [ "complex", ">= 2017.05.11" ]
+                   [ "Bicomplexes", ">= 2017.05.11" ]
                    ],
   SuggestedOtherPackages := [ ],
   ExternalConditions := [ ],

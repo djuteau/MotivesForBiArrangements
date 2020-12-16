@@ -114,6 +114,25 @@ DeclareOperation( "OrlikSolomonBicomplexRecord",
 #        [ IsList ] );
 
 #! @Description
+#!  The argument L is a list of pairs [i,j] of integers between 1 and n + 2.
+#!  The output is a matrix giving the equations of the hyperplanes of the corresponding
+#!  arrangement.
+#! @Arguments n, L
+#! Returns a matrix
+DeclareOperation( "ArrangementFromGraph",
+        [ IsInt, IsList ] );
+        
+#! @Description
+#!  One gives n and two lists of pairs representing divisors in P^n.
+#!  The output is the OrlikSolomonBicomplexRecord of the bi-arrangement.
+#!  In particular, it prints the semisimplified motive.
+#! @Arguments n, L, M
+#! Returns an OrlikSolomonBicomplexRecord
+        
+DeclareOperation( "ProjectiveSpaceOrlikSolomonBicomplexRecord",
+    [ IsInt, IsList, IsList ] );
+
+#! @Description
 #!  The arguments are an integer <A>n</A> and a permutation <A>w</A> on $n$ letters.
 #!  The output is a matrix giving the equations of the hyperplanes of the corresponding
 #!  cellular arrangement.
@@ -255,13 +274,13 @@ DeclareOperation( "OrlikSolomonBicomplexVerticalDifferential",
 #!  for the local Orlik-Solomon bicomplex for the stratum S defined by its codimension <A>k</A>
 #!  and its numnber <A>s</A>. In the setter, $k = i + j$ is not needed, but the linear map to be stored
 #!  is required.
-#! @Arguments A, FG, i, j, k, s
+#! @Arguments A, i, j, k, s
 #! @Returns a linear map (or a morphism in the CAP abelian category attached to <A>A</A>).
 DeclareOperation( "OrlikSolomonBicomplexMorphism",
 		[ IsRecord, IsInt, IsInt, IsInt, IsInt ]);
 
 #! @Description
-#! @Arguments A, FG, i, j, s, f
+#! @Arguments A, i, j, s, f
 DeclareOperation( "SetOrlikSolomonBicomplexMorphism",
 		[ IsRecord, IsInt, IsInt, IsInt, IsCapCategoryMorphism ]);
 #! @EndGroup
