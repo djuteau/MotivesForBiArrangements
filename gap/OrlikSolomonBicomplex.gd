@@ -66,6 +66,12 @@ DeclareOperation( "SemisimplifiedMotive",
 #! @Returns a coloring function
 DeclareOperation( "Coloring",
 	[ IsMatroid, IsInt, IsBool, IsBool ] );
+	
+DeclareOperation( "Coloring",
+	[ IsMatroid, IsInt, IsBool, IsBool, IsBool ] );
+	
+DeclareOperation( "ColoringFunction",
+	[ IsMatroid, IsInt, IsBool, IsBool ] );
 
 #! @BeginGroup OrlikSolomonBicomplexRecord
 #! @Label for IsMatroid, IsFunction[, IsCapCategory]
@@ -80,19 +86,21 @@ DeclareOperation( "Coloring",
 #! @Arguments m, chi, cat
 #! @Returns a record
 DeclareOperation( "OrlikSolomonBicomplexRecord",
-        [ IsMatroid, IsFunction, IsCapCategory ] );
+        [ IsMatroid, IsList, IsCapCategory ] );
 
 #! @Description
 #! @Arguments m, chi
 #! @Returns a record
 DeclareOperation( "OrlikSolomonBicomplexRecord",
-        [ IsMatroid, IsFunction ] );
+        [ IsMatroid, IsList ] );
         
 #! @Description
 #! @Arguments L, M, default
 #! @Returns a record
 DeclareOperation( "OrlikSolomonBicomplexRecord",
         [ IsList, IsList, IsBool, IsBool ] );
+DeclareOperation( "OrlikSolomonBicomplexRecord",
+        [ IsList, IsList ] );
 #! @EndGroup
         
 # DeclareOperation( "RedMultizetaBiOS",
@@ -114,13 +122,23 @@ DeclareOperation( "OrlikSolomonBicomplexRecord",
 #        [ IsList ] );
 
 #! @Description
-#!  The argument L is a list of pairs [i,j] of integers between 1 and n + 2.
+#!  The argument L is a list of pairs [i,j] of integers between 1 and $n + 2$.
 #!  The output is a matrix giving the equations of the hyperplanes of the corresponding
 #!  arrangement.
 #! @Arguments n, L
 #! Returns a matrix
 DeclareOperation( "ArrangementFromGraph",
         [ IsInt, IsList ] );
+        
+#! @Description
+#!  The argument L is a list of pairs [i,j] of integers between 1 and N.
+#!  The function calls the previous method with $n = N - 2$.
+#!  The output is a matrix giving the equations of the hyperplanes of the corresponding
+#!  arrangement.
+#! @Arguments L
+#! Returns a matrix
+DeclareOperation( "ArrangementFromGraph",
+        [ IsList ] );
         
 #! @Description
 #!  One gives n and two lists of pairs representing divisors in P^n.
@@ -131,31 +149,18 @@ DeclareOperation( "ArrangementFromGraph",
         
 DeclareOperation( "ProjectiveSpaceOrlikSolomonBicomplexRecord",
     [ IsInt, IsList, IsList ] );
-
+    
 #! @Description
-#!  The arguments are an integer <A>n</A> and a permutation <A>w</A> on $n$ letters.
-#!  The output is a matrix giving the equations of the hyperplanes of the corresponding
-#!  cellular arrangement.
-#! @Arguments n, w
-#! Returns a matrix
-DeclareOperation( "CellularArrangement",
-		[ IsInt, IsPerm ] );
+#!  One gives n two lists of pairs representing divisors in P^n.
+#!  The output is the OrlikSolomonBicomplexRecord of the bi-arrangement.
+#!  In particular, it prints the semisimplified motive.
+#! @Arguments L, M
+#! Returns an OrlikSolomonBicomplexRecord
+        
+DeclareOperation( "ProjectiveSpaceOrlikSolomonBicomplexRecord",
+    [ IsList, IsList ] );
 
-#! @Description
-#!  The argument is a list of integers <A>a</A>. The output is a matrix giving the equations
-#!  of the hyplerplanes of the corresponding iterated integral arrangement.
-#! @Arguments a
-#! @Returns a matrix
-DeclareOperation( "IteratedIntegralArrangement",
-		[ IsList ] );
 
-#! @Description
-#!  The argument is an integer <A>n</A>. The output is a matrix giving the equations
-#!  of the hyplerplanes of the standard simplex in the $n$-dimensional projective space.
-#! @Arguments n
-#! @Returns a matrix
-DeclareOperation( "SimplexArrangement",
-		[ IsInt ] );
 
 #! @Description
 #!  The arguments are a list <A>w</A> representing a permutation, and two Booleans representing
@@ -164,7 +169,7 @@ DeclareOperation( "SimplexArrangement",
 #! @Arguments w, default, last
 #! Returns an Orlik-Solomon bicomplex record
 DeclareOperation( "CellularIntegralOrlikSolomonBicomplexRecord",
-		[ IsList, IsBool, IsBool ] );
+		[ IsList ] );
 
 #! @Description
 #!  The arguments are a list of integers <A>a</A>, and two Booleans representing
@@ -312,7 +317,7 @@ DeclareOperation( "IsTame",
 #! @Arguments L, M, default, last
 #! @Returns a Boolean
 DeclareOperation( "IsTameBiarrangement",
-	[ IsList, IsList, IsBool, IsBool ] );
+	[ IsList, IsFunction, IsBool, IsBool ] );
 
 #! @Description
 #! @Arguments w, default, last
@@ -333,17 +338,17 @@ DeclareOperation( "IsTameIteratedIntegralBiarrangement",
 #! @BeginGroup OrlikSolomonBicomplexHomologyObjects
 #! @Description
 #! The arguments are an Orlik-Solomon bicomplex record <A>A</A>, a list <A>S</A> representing
-#! a flat, and integers <A>i</A> and <A>j</A>.
+#! a flat, and integers <A>i</A> and <A>j</A>. The letter <A>FG</A> says if we are in the all blue or all red case.
 #! The output is the horizontal or vertical homology object at the position $(i,j)$ in the Orlik-Solomon bicomplex
-#! of the local bi-arrangement of flats less than or equal to <A>S</A>.
-#! @Arguments A, S, i, j
+#! of the local bi-arrangement of flats less than or equal to the stratum of codimension $k$ numbered $s$.
+#! @Arguments A, FG, i, j, k, s
 #! @Returns a vector space
 DeclareOperation( "OrlikSolomonBicomplexHorizontalHomologyObject",
-		[ IsRecord, IsList, IsInt, IsInt ] );
+		[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt ] );
 
-#! @Arguments A, S, i, j
+#! @Arguments A, FG, i, j, k, s
 DeclareOperation( "OrlikSolomonBicomplexVerticalHomologyObject",
-		[ IsRecord, IsList, IsInt, IsInt ] );
+		[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt ] );
 #! @EndGroup
 
 #! @BeginGroup IsBlueOrRedExact
@@ -354,6 +359,12 @@ DeclareOperation( "OrlikSolomonBicomplexVerticalHomologyObject",
 #! @Returns a boolean
 DeclareOperation( "IsBlueExact",
 		[ IsRecord, IsList ] );
+		
+DeclareOperation( "OrlikSolomonBicomplexHorizontalHomologyMorphism",
+	[ IsRecord, IsInt, IsInt, IsInt, IsInt ] );
+	
+DeclareOperation( "OrlikSolomonBicomplexVerticalHomologyMorphism",
+	[ IsRecord, IsInt, IsInt, IsInt, IsInt ] );
 		
 #! @Arguments A, S
 DeclareOperation( "IsRedExact",
@@ -383,6 +394,42 @@ DeclareOperation( "RedNonExactness",
 #! @Returns a matrix
 DeclareOperation( "OrlikSolomonBicomplexDimensions",
 		[ IsRecord, IsString ] );
+		
+DeclareOperation( "OrlikSolomonBicomplexDimensions",
+		[ IsRecord ] );
+		
+DeclareOperation( "OrlikSolomonBicomplexHorizontalHomologyDimensions",
+	[ IsRecord, IsString ] );
+	
+DeclareOperation( "OrlikSolomonBicomplexHorizontalHomologyDimensions",
+	[ IsRecord ] );
+	
+DeclareOperation( "OrlikSolomonBicomplexHorizontalHomologyDimensions",
+	[ IsRecord, IsString, IsInt, IsInt ] );
+
+DeclareOperation( "OrlikSolomonBicomplexHorizontalHomologyDimensions",
+	[ IsRecord, IsInt, IsInt ] );
+
+		
+DeclareOperation( "OrlikSolomonBicomplexVerticalHomologyDimensions",
+	[ IsRecord, IsString ] );
+	
+DeclareOperation( "OrlikSolomonBicomplexVerticalHomologyDimensions",
+	[ IsRecord ] );
+	
+DeclareOperation( "OrlikSolomonBicomplexVerticalHomologyDimensions",
+	[ IsRecord, IsString, IsInt, IsInt ] );
+
+DeclareOperation( "OrlikSolomonBicomplexVerticalHomologyDimensions",
+	[ IsRecord, IsInt, IsInt ] );
+	
+DeclareOperation( "IsExactOrlikSolomonBicomplex",
+    [ IsRecord ] );
+
+
+DeclareOperation( "DefectOfExactness",
+    [ IsRecord ] );    
+    
 
 #! @Description
 #! The arguments is a matrix recording the dimensions of a projective Orlik-Solomon bicomplex.

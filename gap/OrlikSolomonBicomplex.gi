@@ -22,6 +22,129 @@ InstallMethod( Matroid,
 
 end );
 
+InstallMethod( Coloring,
+
+    [ IsMatroid, IsInt, IsBool, IsBool ],
+    
+    function( m, k, default, last )
+    
+    local flats, i, j;
+    
+    flats := Flats( m );
+    
+    return Concatenation(
+        List(
+            [ 1 .. Rank( m ) - 1 ],
+            i -> List(
+                flats[i + 1],
+                function( S )
+                    if Length( Filtered( S, j -> j <= k ) ) = i then
+                        return true;
+                    elif Length( Filtered( S, j -> j > k ) ) = i then
+                        return false;
+                    else
+                        return default;
+                    fi;
+                end 
+                )
+        ),
+        [ [ last ] ]
+        );
+        
+end );
+
+InstallMethod( Coloring,
+
+    [ IsMatroid, IsInt, IsBool, IsBool, IsBool ],
+    
+    function( m, k, conflict, default, last )
+    
+    local flats, i, j;
+    
+    flats := Flats( m );
+    
+    return Concatenation(
+        List(
+            [ 1 .. Rank( m ) - 1 ],
+            i -> List(
+                flats[i + 1],
+                function( S )
+                    if Length( Filtered( S, j -> j <= k ) ) = i and Length( Filtered( S, j -> j > k ) ) = i then
+                        return conflict;
+                    elif Length( Filtered( S, j -> j <= k ) ) = i then
+                        return true;
+                    elif Length( Filtered( S, j -> j > k ) ) = i then
+                        return false;
+                    else
+                        return default;
+                    fi;
+                end 
+                )
+        ),
+        [ [ last ] ]
+        );
+        
+end );
+
+# InstallMethod( Coloring,
+# 
+#     [ IsMatroid, IsInt, IsBool, IsBool, IsBool ],
+#     
+#     function( m, k, conflict, default, last )
+#     
+#     local flats, blue, red, i, j;
+#     
+#     flats := Flats( m );
+#     blue := [ 1 .. k ];
+#     red := [ k + 1 .. Length( flats[2] ) ];
+#     
+#     return Concatenation(
+#         List(
+#             [ 1 .. Rank( m ) - 1 ],
+#             i -> List(
+#                 flats[i + 1],
+#                 function( S )
+#                     if S = cl( Intersection( S, red ) ) then
+#                         return false;
+#                     elif S = cl( Intersection( S, blue ) ) then
+#                         return true;
+#                     else
+#                         return default;
+#                     fi;
+#                 end 
+#                 )
+#         ),
+#         [ [ last ] ]
+#         );
+#         
+# end );
+# 
+# S = cl( Intersection( S, blue ) )  
+# S = cl( Intersection( S, red ) )  
+
+InstallMethod( ColoringFunction,
+	[ IsMatroid, IsInt, IsBool, IsBool ],
+	
+	function( m, k, default, last )
+	 	local rk;
+ 	
+	 	rk := RankFunction( m );
+ 	
+	 	return function( flat )
+				if rk( flat ) = Rank( m ) then # flat is the maximal stratum {0}
+					return last;
+				elif rk( flat ) = Length( Filtered( flat, i -> i <= k ) ) then # flat is an intersection of blue hyperplanes
+					return true;
+				elif rk( flat ) = Length( Filtered( flat, i -> i > k ) ) then # flat is an intersection of red hyperplanes
+					return false;
+				else 
+					return default;
+				fi;
+			end;
+ 	
+ end );
+
+
 InstallMethod( ArrangementFromGraph,
 
 	[ IsInt, IsList ],
@@ -51,6 +174,16 @@ InstallMethod( ArrangementFromGraph,
 
 end );
 
+InstallMethod( ArrangementFromGraph,
+
+	[ IsList ],
+
+	function( L )
+	
+	return ArrangementFromGraph( MaximumList( Union( L ) ) - 2, L );
+
+end );
+
 InstallMethod( ProjectiveSpaceOrlikSolomonBicomplexRecord,
 
     [ IsInt, IsList, IsList ],
@@ -66,63 +199,74 @@ InstallMethod( ProjectiveSpaceOrlikSolomonBicomplexRecord,
 	
 end );
 
+InstallMethod( ProjectiveSpaceOrlikSolomonBicomplexRecord,
 
+    [ IsList, IsList ],
 
-InstallMethod( SemisimplifiedMotive,
-
-	[ IsRecord ],
-
-	function( A )
+	function ( L, M )
 	
-		local n, phi, last, k;
-						
-		A.dimgrBlue := [ ];
-		A.dimgrRed := [ ];
-		A.dimgrImage := [ ];
+	return OrlikSolomonBicomplexRecord(
+		ArrangementFromGraph( L ),
+		ArrangementFromGraph ( M ),
+		fail,
+		false
+	);
+	
+end );
 
-		
-		n := A.rank - 1;
+InstallMethod( OrlikSolomonBicomplexRecord,
 
-		last := A.coloring[ n + 1 ][1];
+	[ IsList, IsList ],
+ 	
+ 	function( L, M )
+ 		local m, chi;
+ 		
+ 		m := Matroid ( Concatenation( L, M ), HomalgFieldOfRationals( ) );
+ 		chi := Coloring( m, Length( L ), fail, true );
+ 		
+ 		return OrlikSolomonBicomplexRecord( m, chi );
+ 
+ end );
 
-		if last then
-		
-			for k in [ 0 .. n ] do
-				phi := CokernelObjectFunctorial(
-					OrlikSolomonBicomplexVerticalDifferential( A, "F", k + 1, n - k - 1, n + 1, 1 ),
-					OrlikSolomonBicomplexMorphism( A, k + 1, n - k, n + 1, 1 ),
-					OrlikSolomonBicomplexVerticalDifferential( A, "G", k + 1, n - k - 1, n + 1, 1 )
-				);
-				Add( A.dimgrBlue, Dimension( Source( phi ) ) );
-				Add( A.dimgrRed, Dimension( Range( phi ) ) );
-				Add( A.dimgrImage, Dimension( ImageObject( phi ) ) );
-			od;
-		
-		else
-		
-			for k in [ 0 .. n ] do
-				phi := KernelObjectFunctorial(
-					OrlikSolomonBicomplexHorizontalDifferential( A, "F", k, n - k + 1, n + 1, 1 ),
-					OrlikSolomonBicomplexMorphism( A, k, n - k + 1, n + 1, 1 ),
-					OrlikSolomonBicomplexHorizontalDifferential( A, "G", k, n - k + 1, n + 1, 1 )
-				);
-				Add( A.dimgrBlue, Dimension( Source( phi ) ) );
-				Add( A.dimgrRed, Dimension( Range( phi ) ) );
-				Add( A.dimgrImage, Dimension( ImageObject( phi ) ) );
-			od;
-		
-		fi;
+InstallMethod( OrlikSolomonBicomplexRecord,
 
-	PrintArray( [ A.dimgrBlue, A.dimgrImage, A.dimgrRed ] );
-	Print( "\n" );
+	[ IsList, IsList, IsBool, IsBool ],
+ 	
+ 	function( L, M, default, last )
+ 		local m, chi;
+ 		
+ 		m := Matroid ( Concatenation( L, M ), HomalgFieldOfRationals( ) );
+ 		chi := Coloring( m, Length( L ), default, last );
+ 		
+ 		return OrlikSolomonBicomplexRecord( m, chi );
+ 
+ end );
+ 
+ InstallMethod( OrlikSolomonBicomplexRecord,
+        [ IsMatroid, IsList ],
+        
+	function( m, chi )
+		local matrixcat;
+		
+		matrixcat := MatrixCategory( HomalgFieldOfRationals() );
+		
+		CapCategorySwitchLogicOff( matrixcat );
+		
+		DeactivateCachingOfCategory( matrixcat );
+		
+		DisableInputSanityChecks( matrixcat );
+		
+		SetCachingToCrisp( matrixcat, "ZeroMorphism" );
+		
+		return OrlikSolomonBicomplexRecord( m, chi, matrixcat );
 
 end );
 
 InstallMethod( OrlikSolomonBicomplexRecord,
-	[ IsMatroid, IsFunction, IsCapCategory ],
+	[ IsMatroid, IsList, IsCapCategory ],
 
 	function( m, chi, cat )
-    	local A, k, i, j, phi, d, D, s, t, u, tt, uu, a, psi, obj, c, b, r, M, res, phiF, phiG, psiF, psiG, FG;
+    	local A, k, i, j, phi, d, D, s, t, u, tt, uu, a, psi, obj, c, b, r, res, phiF, phiG, psiF, psiG, FG;
 
 	    A := rec(
     		cat := cat,
@@ -132,8 +276,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
     		);
 
 		A.nr_flats := List( A.flats, Length );
-		A.coloring := List( A.flats{ [ 2 .. Length( A.flats ) ] }, l -> List( l, chi ) );
-		A.Smin := A.flats[Length( A.flats )][1];
+		A.coloring := chi;
 		A.incidence := List( [ 0 .. A.rank ], i -> List( [ 0 .. A.rank ], j ->
 						List( A.flats[i + 1], s -> List( A.flats[j + 1], t -> IsSubset( s, t ) ) ) ) );
 
@@ -175,14 +318,14 @@ InstallMethod( OrlikSolomonBicomplexRecord,
 	
 	    for k in [ 1 .. A.rank ] do
 			if k = A.rank then
-				Print( "\nCodimension ", k, " (1 flat)\n");
+#				Print( "\nCodimension ", k, " (1 flat)\n");
 			else
-				Print( "\nCodimension ", k, " (", A.nr_flats[k + 1], " flats)\n");
+#				Print( "\nCodimension ", k, " (", A.nr_flats[k + 1], " flats)\n");
 			fi;
 		
 			for s in [ 1 .. A.nr_flats[k + 1] ] do
 			
-				Print( ".\c" );
+#				Print( ".\c" );
 
 				c := A.coloring[k][s];
 				
@@ -268,8 +411,6 @@ InstallMethod( OrlikSolomonBicomplexRecord,
 
 				else
 				
-					M := A;
-
 					for i in [ 0 .. k ] do
 						j := k - i;
 						phiF := OrlikSolomonBicomplexVerticalDifferential( A, "F", i, j - 2, k, s );
@@ -332,31 +473,233 @@ InstallMethod( OrlikSolomonBicomplexRecord,
 			od;
 		od;
 		
-		Print( "\n\n" );
+#		Print( "\n\n" );
 		SemisimplifiedMotive( A );
  
  		return A;
  
 end );
 
-InstallMethod( OrlikSolomonBicomplexRecord,
-        [ IsMatroid, IsFunction ],
-        
-	function( m, chi )
-		local matrixcat;
-		
-		matrixcat := MatrixCategory( HomalgFieldOfRationals() );
-		
-		CapCategorySwitchLogicOff( matrixcat );
-		
-		DeactivateCachingOfCategory( matrixcat );
-		
-		DisableInputSanityChecks( matrixcat );
-		
-		SetCachingToCrisp( matrixcat, "ZeroMorphism" );
-		
-		return OrlikSolomonBicomplexRecord( m, chi, matrixcat );
+####################
 
+InstallMethod( OrlikSolomonBicomplexRecord,
+	[ IsMatroid, IsList, IsCapCategory ],
+
+	function( m, chi, cat )
+    	local A, k, i, j, phi, d, D, s, t, u, tt, uu, a, psi, obj, c, b, r, res, phiF, phiG, psiF, psiG, FG;
+
+	    A := rec(
+    		cat := cat,
+    		matroid := m,
+    		flats := Flats( m ),
+    		rank := RankOfMatroid( m ),
+    		);
+
+		A.nr_flats := List( A.flats, Length );
+		A.coloring := chi;
+		A.incidence := List( [ 0 .. A.rank ], i -> List( [ 0 .. A.rank ], j ->
+						List( A.flats[i + 1], s -> List( A.flats[j + 1], t -> IsSubset( s, t ) ) ) ) );
+
+
+		A.F := rec(
+			objects := List( [ 0 .. A.rank ], i -> List( [ 0 .. A.rank - i ], j -> [ ] ) ),
+			differentials_horizontal := List( [ 0 .. A.rank ],
+                                    i -> List( [ 0 .. A.rank - i ],
+                                      j -> List( [ 1 .. A.nr_flats[i + j + 1] ], k -> [ ] ) ) ),
+			differentials_vertical := List( [ 0 .. A.rank ],
+                                    i -> List( [ 0 .. A.rank - i ],
+                                      j -> List( [ 1 .. A.nr_flats[i + j + 1] ], k -> [ ] ) ) ),
+            homology_objects := List( [ 0 .. A.rank ], i -> List( [ 0 .. A.rank - i - 1 ], j -> [ ] ) )
+			);
+	
+    	A.F.objects[1][1][1] := TensorUnit( cat );
+
+		
+		A.G := rec(
+			objects := List( [ 0 .. A.rank ], i -> List( [ 0 .. A.rank - i ], j -> [ ] ) ),
+			differentials_horizontal := List( [ 0 .. A.rank ],
+                                    i -> List( [ 0 .. A.rank - i ],
+                                      j -> List( [ 1 .. A.nr_flats[i + j + 1] ], k -> [ ] ) ) ),
+			differentials_vertical := List( [ 0 .. A.rank ],
+                                    i -> List( [ 0 .. A.rank - i ],
+                                      j -> List( [ 1 .. A.nr_flats[i + j + 1] ], k -> [ ] ) ) ),
+            homology_objects := List( [ 0 .. A.rank ], i -> List( [ 0 .. A.rank - i - 1 ], j -> [ ] ) )
+			);
+	
+    	A.G.objects[1][1][1] := TensorUnit( cat );
+    	
+    	A.morphisms := List(
+    		[ 0 .. A.rank ],
+    		i -> List(
+    			[ 0 .. A.rank - i ],
+    			j -> [ ]
+    			)
+    		);
+    
+    	A.morphisms[1][1][1] := IdentityMorphism( TensorUnit( cat ) );
+	
+	    for k in [ 1 .. A.rank ] do
+			if k = A.rank then
+#				Print( "\nCodimension ", k, " (1 flat)\n");
+			else
+#				Print( "\nCodimension ", k, " (", A.nr_flats[k + 1], " flats)\n");
+			fi;
+		
+			for s in [ 1 .. A.nr_flats[k + 1] ] do
+			
+#				Print( ".\c" );
+
+				c := A.coloring[k][s];
+				
+				tt := Positions( A.incidence[k + 1][k][s], true );
+
+				if c = true then
+
+					for i in Reversed( [ 0 .. k ] ) do
+						for FG in [ "F", "G" ] do
+							j := k - i;
+							phi := OrlikSolomonBicomplexHorizontalDifferential( A, FG, i - 1, j, k, s );
+							d := KernelEmbedding( phi );
+							SetOrlikSolomonBicomplexObject( A, FG, i, j, s, Source( d ) );
+							D := List( tt, t -> OrlikSolomonBicomplexObject( A, FG, i - 1, j, k - 1, t ) );
+							for a in [ 1 .. Length( tt ) ] do
+								SetOrlikSolomonBicomplexHorizontalDifferentialComponent(
+									A, FG, i, j, s, tt[a], ComponentOfMorphismIntoDirectSum( d, D, a )
+								);
+							od;
+							if i < k then
+								D := List( tt, t -> OrlikSolomonBicomplexObject( A, FG, i, j - 1, k - 1, t ) );
+								psi := PreCompose(
+											   OrlikSolomonBicomplexHorizontalDifferential( A, FG, i, j - 1, k, s ),
+											   OrlikSolomonBicomplexVerticalDifferential( A, FG, i - 1, j - 1, k, s )
+								);
+								psi := KernelLift( phi, psi );
+								for a in [ 1 .. Length( tt ) ] do
+									SetOrlikSolomonBicomplexVerticalDifferentialComponent(
+										A, FG, i, j - 1, tt[a], s, ComponentOfMorphismFromDirectSum( psi, D, a )
+									);
+								od;
+							fi;
+						od;
+
+						SetOrlikSolomonBicomplexMorphism(
+							A, i, j, s, KernelObjectFunctorial(
+								OrlikSolomonBicomplexHorizontalDifferential( A, "F", i - 1, j, k, s ),
+								OrlikSolomonBicomplexMorphism( A, i - 1, j, k, s ),
+								OrlikSolomonBicomplexHorizontalDifferential( A, "G", i - 1, j, k, s )
+								)
+						);
+					od;
+
+				elif c = false then
+
+					for i in [ 0 .. k ] do
+						for FG in [ "F", "G" ] do
+							j := k - i;
+							phi := OrlikSolomonBicomplexVerticalDifferential( A, FG, i, j - 2, k, s );
+							d := CokernelProjection( phi );
+							SetOrlikSolomonBicomplexObject( A, FG, i, j, s, Range( d ) );
+							D := List( tt, t -> OrlikSolomonBicomplexObject( A, FG, i, j - 1, k - 1, t ) );
+							for a in [ 1 .. Length( tt ) ] do
+								SetOrlikSolomonBicomplexVerticalDifferentialComponent(
+									A, FG, i, j - 1, tt[a], s, ComponentOfMorphismFromDirectSum( d, D, a )
+								);
+							od;
+							if i > 0 then
+								D := List( tt, t -> OrlikSolomonBicomplexObject( A, FG, i - 1, j, k - 1, t ) );
+								psi := PreCompose(
+											   OrlikSolomonBicomplexHorizontalDifferential( A, FG, i, j - 1, k, s ),
+											   OrlikSolomonBicomplexVerticalDifferential( A, FG, i - 1, j - 1, k, s )
+								);
+								psi := CokernelColift( phi, psi );
+								for a in [ 1 .. Length( tt ) ] do
+									SetOrlikSolomonBicomplexHorizontalDifferentialComponent(
+										A, FG, i, j, s, tt[a], ComponentOfMorphismIntoDirectSum( psi, D, a )
+									);
+								od;
+							fi;
+						od;
+						
+						SetOrlikSolomonBicomplexMorphism(
+							A, i, j, s, CokernelObjectFunctorial(
+								OrlikSolomonBicomplexVerticalDifferential( A, "F", i, j - 2, k, s ),
+								OrlikSolomonBicomplexMorphism( A, i, j - 1, k, s ),
+								OrlikSolomonBicomplexVerticalDifferential( A, "G", i, j - 2, k, s )
+								)
+						);
+
+					od;
+
+
+				else
+				
+					for i in [ 0 .. k ] do
+						j := k - i;
+						phiF := OrlikSolomonBicomplexVerticalDifferential( A, "F", i, j - 2, k, s );
+						d := CokernelProjection( phiF );
+						SetOrlikSolomonBicomplexObject( A, "F", i, j, s, Range( d ) );
+						D := List( tt, t -> OrlikSolomonBicomplexObject( A, "F", i, j - 1, k - 1, t ) );
+						for a in [ 1 .. Length( tt ) ] do
+							SetOrlikSolomonBicomplexVerticalDifferentialComponent(
+								A, "F", i, j - 1, tt[a], s, ComponentOfMorphismFromDirectSum( d, D, a )
+							);
+						od;
+#						if i > 0 then
+							D := List( tt, t -> OrlikSolomonBicomplexObject( A, "F", i - 1, j, k - 1, t ) );
+							psiF := PreCompose(
+										   OrlikSolomonBicomplexHorizontalDifferential( A, "F", i, j - 1, k, s ),
+										   OrlikSolomonBicomplexVerticalDifferential( A, "F", i - 1, j - 1, k, s )
+							);
+							psiF := CokernelColift( phiF, psiF );
+							for a in [ 1 .. Length( tt ) ] do
+								SetOrlikSolomonBicomplexHorizontalDifferentialComponent(
+									A, "F", i, j, s, tt[a], ComponentOfMorphismIntoDirectSum( psiF, D, a )
+								);
+							od;
+#						fi;
+						
+						phiG := OrlikSolomonBicomplexHorizontalDifferential( A, "G", i - 1, j, k, s );
+						d := KernelEmbedding( phiG );
+						SetOrlikSolomonBicomplexObject( A, "G", i, j, s, Source( d ) );
+						D := List( tt, t -> OrlikSolomonBicomplexObject( A, "G", i - 1, j, k - 1, t ) );
+						for a in [ 1 .. Length( tt ) ] do
+							SetOrlikSolomonBicomplexHorizontalDifferentialComponent(
+								A, "G", i, j, s, tt[a], ComponentOfMorphismIntoDirectSum( d, D, a )
+							);
+						od;
+#						if i < k then
+							D := List( tt, t -> OrlikSolomonBicomplexObject( A, "G", i, j - 1, k - 1, t ) );
+							psiG := PreCompose(
+										   OrlikSolomonBicomplexHorizontalDifferential( A, "G", i, j - 1, k, s ),
+										   OrlikSolomonBicomplexVerticalDifferential( A, "G", i - 1, j - 1, k, s )
+							);
+							psiG := KernelLift( phiG, psiG );
+							for a in [ 1 .. Length( tt ) ] do
+								SetOrlikSolomonBicomplexVerticalDifferentialComponent(
+									A, "G", i, j - 1, tt[a], s, ComponentOfMorphismFromDirectSum( psiG, D, a )
+								);
+							od;
+#						fi;
+
+						SetOrlikSolomonBicomplexMorphism(
+							A, i, j, s, KernelLift(
+								phiG,
+								PreCompose( psiF, OrlikSolomonBicomplexMorphism( A, i - 1, j, k, s ) )
+							)
+						);
+						
+					od;
+
+
+				fi;
+			od;
+		od;
+		
+#		Print( "\n\n" );
+		SemisimplifiedMotive( A );
+ 
+ 		return A;
+ 
 end );
 
 
@@ -369,7 +712,7 @@ InstallMethod( OrlikSolomonBicomplexMorphism,
 	
 		local tt, t;
 		
-		if i < 0 or j < 0 then
+		if i < 0 or j < 0 or i + j > k then
 			return ZeroObjectFunctorial( A.cat );
 		fi;
 		
@@ -556,199 +899,131 @@ InstallGlobalFunction( SetOrlikSolomonBicomplexVerticalDifferentialComponent,
 		fi;
 
 end );
-
-InstallMethod( IteratedIntegralArrangement,
-
-	[ IsList ],
-
-	function( a ) 			# a is the list of a_i's
-	
-	local n, res, i, j;
-	
-	n := Length( a );
-	
-	res := [];
-	
-	for i in [ 1 .. n + 1 ] do
-		res[i] := [];
-		for j in [ 1 .. n + 1 ] do
-			res[i][j] := 0;
-		od;
-	od;
-	
-	res[1][1] := 1;
-	
-	for i in [ 2 .. n + 1] do
-		res[i][1] := a[i - 1];
-		res[i][i] := -1;
-	od;
-	
-	return res;
-end );
-
-InstallMethod( CellularArrangement,
-
-	[ IsInt, IsPerm ],
-
-	function( n, w ) 
-
-# choice of affine coordinates: t_i with (z_1, ..., z_n) = (t_1, t_2, t_3, ..., t_{n-3}, 1, infty, 0)
-# choice of projective coordinates: (z_0, z_1, ..., z_n) with {z_0 = 0} the hyperplane at infinity,
-# (for consistency with SimplexArrangement)
-
-	local res, i, j, a, b, c;
-	
-	res := NullMat( n - 2, n - 2 );
-
-# 	for i in [ 1 .. n - 2 ] do
-# 		res[i] := [];
-# 		for j in [ 1 .. n - 2 ] do
-# 			res[i][j] := 0;
-# 		od;
-# 	od;
-	
-	c := 1;
-	
-	for i in [ 1 .. n ] do
-		a := i^w;
-		if i = n then
-			b := 1^w;
-		else
-			b := ( i + 1 )^w;
-		fi;
-		
-		if a in [ 1 .. n - 3 ] then
-			if b in [ 1 .. n - 3 ] then
-				res[c][a + 1] := 1;
-				res[c][b + 1] := -1;
-				c := c + 1;
-			elif b = n - 2 then
-				res[c][a + 1] := 1;
-				res[c][1] := -1;
-				c := c + 1;
-			elif b = n then
-				res[c][a + 1] := 1;
-				c := c + 1;
-			fi;
-		elif a = n - 2 then
-			if b in [ 1 .. n - 3 ] then
-				res[c][1] := 1;
-				res[c][b + 1] := -1;
-				c := c + 1;
-			fi;
-		elif a = n then
-			if b in [ 1 .. n - 3 ] then
-				res[c][b + 1] := -1;
-				c := c + 1;
-			fi;
-		fi;
-	od;
-	
-	if c = n-2 then
-		res[n-2][1] := 1; # adding the hyperplane at infinity
-	fi;
-	
-	return res;
-end );
-
-InstallMethod( SimplexArrangement,
-
-	[ IsInt ],
-
-	function( n )
-	
-	local res, i, j;
-	
-	res := [ ];
-	
-	
-	for i in [ 1 .. n + 1 ] do
-		res[i] := [ ];
-		for j in [ 1 .. n + 1 ] do
-			res[i][j] := 0;
-		od;
-	od;
-
-	res[1][2] := 1;
-
-	for i in [ 2 .. n ] do
-		res[i][i] := 1;
-		res[i][i + 1] := -1;
-	od;
-	
-	res[n + 1][1] := 1;
-	res[n + 1][n + 1] := -1;
-	
-	return res;
-end );
-
-InstallMethod( Coloring,
-
-	[ IsMatroid, IsInt, IsBool, IsBool ],
-	
-	function( m, k, default, last )
-	 	local rk;
- 	
-	 	rk := RankFunction( m );
- 	
-	 	return function( flat )
-				if rk( flat ) = Rank( m ) then # flat is the maximal stratum {0}
-					return last;
-				elif rk( flat ) = Length( Filtered( flat, i -> i <= k ) ) then # flat is an intersection of blue hyperplanes
-					return true;
-				elif rk( flat ) = Length( Filtered( flat, i -> i > k ) ) then # flat is an intersection of red hyperplanes
-					return false;
-				else 
-					return default;
-				fi;
-			end;
- 	
- end );
-
-InstallMethod( OrlikSolomonBicomplexRecord,
-
-	[ IsList, IsList, IsBool, IsBool ],
- 	
- 	function( L, M, default, last )
- 		local m, chi;
- 		
- 		m := Matroid ( Concatenation( L, M ), HomalgFieldOfRationals( ) );
- 		chi := Coloring( m, Length( L ), default, last );
- 		
- 		return OrlikSolomonBicomplexRecord( m, chi );
  
- end );
+InstallMethod( OrlikSolomonBicomplexHorizontalHomologyObject,
 
-
-InstallMethod( CellularIntegralOrlikSolomonBicomplexRecord,
-
-	[ IsList, IsBool, IsBool ],
-
-	function ( w, default, last )
-
-	return OrlikSolomonBicomplexRecord(
-		CellularArrangement( Length( w ), PermList( w ) ),
-		SimplexArrangement ( Length( w ) - 3 ),
-		default,
-		last
+	[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt ],
+	
+	function ( A, FG, i, j, k, s )
+	
+	return HomologyObject(
+	    OrlikSolomonBicomplexHorizontalDifferential( A, FG, i + 1, j, k, s ),
+	    OrlikSolomonBicomplexHorizontalDifferential( A, FG, i, j, k, s )
 	);
 	
 end );
 
-InstallMethod( IteratedIntegralOrlikSolomonBicomplexRecord,
+InstallMethod( OrlikSolomonBicomplexVerticalHomologyObject,
 
-	[ IsList, IsBool, IsBool ],
-
-	function ( a, default, last )
-
-	return OrlikSolomonBicomplexRecord(
-		CellularArrangement( a ),
-		SimplexArrangement ( Length( a ) ),
-		default,
-		last
+	[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt ],
+	
+	function ( A, FG, i, j, k, s )
+	
+	return HomologyObject(
+	    OrlikSolomonBicomplexVerticalDifferential( A, FG, i, j - 1, k, s ),
+	    OrlikSolomonBicomplexVerticalDifferential( A, FG, i, j, k, s )
 	);
 	
 end );
+
+InstallMethod( OrlikSolomonBicomplexHorizontalHomologyMorphism,
+
+	[ IsRecord, IsInt, IsInt, IsInt, IsInt ],
+	
+	function ( A, i, j, k, s )
+	
+	return HomologyObjectFunctorial(
+	    OrlikSolomonBicomplexHorizontalDifferential( A, "F", i + 1, j, k, s ),
+	    OrlikSolomonBicomplexHorizontalDifferential( A, "F", i, j, k, s ),
+	    OrlikSolomonBicomplexMorphism( A, i, j, k, s ),
+	    OrlikSolomonBicomplexHorizontalDifferential( A, "G", i + 1, j, k, s ),
+	    OrlikSolomonBicomplexHorizontalDifferential( A, "G", i, j, k, s )
+	);
+	
+end );
+
+InstallMethod( OrlikSolomonBicomplexVerticalHomologyMorphism,
+
+	[ IsRecord, IsInt, IsInt, IsInt, IsInt ],
+	
+	function ( A, i, j, k, s )
+	
+	return HomologyObjectFunctorial(
+	    OrlikSolomonBicomplexVerticalDifferential( A, "F", i, j - 1, k, s ),
+	    OrlikSolomonBicomplexVerticalDifferential( A, "F", i, j, k, s ),
+	    OrlikSolomonBicomplexMorphism( A, i, j, k, s ),
+	    OrlikSolomonBicomplexVerticalDifferential( A, "G", i, j - 1, k, s ),
+	    OrlikSolomonBicomplexVerticalDifferential( A, "G", i, j, k, s )
+	);
+	
+end );
+
+InstallMethod( SemisimplifiedMotive,
+
+    [ IsRecord ],
+    
+    function( A )
+    
+    local n, c;
+    
+    n := A.rank;
+    c := A.coloring[n][1];
+    
+    if c then
+        return List( [ 0 .. n - 1 ], k -> Dimension( ImageObject( OrlikSolomonBicomplexVerticalHomologyMorphism( A, k + 1, n - 1 - k, n, 1 ) ) ) );
+    else
+        return List( [ 0 .. n - 1 ], k -> Dimension( ImageObject( OrlikSolomonBicomplexHorizontalHomologyMorphism( A, k, n - k, n, 1 ) ) ) );
+    fi;
+    
+end );
+    
+# InstallMethod( SemisimplifiedMotive,
+# 
+# 	[ IsRecord, IsBool ],
+# 
+# 	function( A, last )
+# 	
+# 		local n, phi, k;
+# 						
+# 		A.dimgrBlue := [ ];
+# 		A.dimgrRed := [ ];
+# 		A.dimgrImage := [ ];
+# 
+# 		
+# 		n := A.rank - 1;
+# 
+# 		if last then
+# 		
+# 			for k in [ 0 .. n ] do
+# 				phi := CokernelObjectFunctorial(
+# 					OrlikSolomonBicomplexVerticalDifferential( A, "F", k + 1, n - k - 1, n + 1, 1 ),
+# 					OrlikSolomonBicomplexMorphism( A, k + 1, n - k, n + 1, 1 ),
+# 					OrlikSolomonBicomplexVerticalDifferential( A, "G", k + 1, n - k - 1, n + 1, 1 )
+# 				);
+# 				Add( A.dimgrRed, Dimension( Source( phi ) ) );
+# 				Add( A.dimgrBlue, Dimension( Range( phi ) ) );
+# 				Add( A.dimgrImage, Dimension( ImageObject( phi ) ) );
+# 			od;
+# 		
+# 		else
+# 		
+# 			for k in [ 0 .. n ] do
+# 				phi := KernelObjectFunctorial(
+# 					OrlikSolomonBicomplexHorizontalDifferential( A, "F", k, n - k + 1, n + 1, 1 ),
+# 					OrlikSolomonBicomplexMorphism( A, k, n - k + 1, n + 1, 1 ),
+# 					OrlikSolomonBicomplexHorizontalDifferential( A, "G", k, n - k + 1, n + 1, 1 )
+# 				);
+# 				Add( A.dimgrRed, Dimension( Source( phi ) ) );
+# 				Add( A.dimgrBlue, Dimension( Range( phi ) ) );
+# 				Add( A.dimgrImage, Dimension( ImageObject( phi ) ) );
+# 			od;
+# 		
+# 		fi;
+# 
+# #	PrintArray( [ A.dimgrBlue, A.dimgrImage, A.dimgrRed ] );
+# #	Print( "\n" );
+# 
+# end );
 
 
 InstallMethod( OrlikSolomonBicomplexDimensions,
@@ -772,6 +1047,274 @@ InstallMethod( OrlikSolomonBicomplexDimensions,
 		od;
 		return res;
 end );
+
+InstallMethod( OrlikSolomonBicomplexDimensions,
+
+	[ IsRecord ],
+
+	function( A )
+		local r, res, i, j;
+	
+		r := A.rank;
+	
+		res := [];
+		for i in [ 0 .. r ] do
+			res[i + 1] := [];
+			for j in [ 0 .. r - i ] do
+				res[i + 1][j + 1] := Dimension( ImageObject( OrlikSolomonBicomplexMorphism( A, i, j, r, 1 ) ) );
+			od;
+			for j in [ r - i + 1 .. r ] do
+				res[i + 1][j + 1] := 0;
+			od;
+		od;
+		return res;
+end );
+
+InstallMethod( OrlikSolomonBicomplexHorizontalHomologyDimensions,
+
+	[ IsRecord, IsString ],
+
+	function( A, FG )
+		local r, res, i, j;
+	
+		r := A.rank;
+	
+		res := [];
+		for i in [ 0 .. r ] do
+			res[i + 1] := [];
+			for j in [ 0 .. r - i ] do
+				res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexHorizontalHomologyObject( A, FG, i, j, r, 1 ) );
+			od;
+			for j in [ r - i + 1 .. r ] do
+				res[i + 1][j + 1] := 0;
+			od;
+		od;
+		return res;
+end );
+
+InstallMethod( OrlikSolomonBicomplexHorizontalHomologyDimensions,
+
+	[ IsRecord ],
+
+	function( A )
+		local r, res, i, j;
+	
+		r := A.rank;
+
+		res := [];
+		for i in [ 0 .. r ] do
+			res[i + 1] := [];
+		    for j in [ 0 .. r ] do
+		        res[i + 1][j + 1] := 0;
+		    od;
+		od;
+
+		for i in [ 0 .. r ] do
+			for j in [ 0 .. r - i ] do
+				res[i + 1][j + 1] := Dimension( ImageObject( OrlikSolomonBicomplexHorizontalHomologyMorphism( A, i, j, r, 1 ) ) );
+			od;
+		od;
+		return res;
+end );
+
+InstallMethod( OrlikSolomonBicomplexHorizontalHomologyDimensions,
+
+	[ IsRecord, IsString, IsInt, IsInt ],
+
+	function( A, FG, k, s )
+		local r, res, i, j;
+	
+		r := A.rank;
+	
+		res := [];
+		for i in [ 0 .. r ] do
+			res[i + 1] := [];
+		    for j in [ 0 .. r ] do
+		        res[i + 1][j + 1] := 0;
+		    od;
+		od;
+		for i in [ 0 .. k ] do
+			for j in [ 0 .. k - i ] do
+				res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexHorizontalHomologyObject( A, FG, i, j, k, s ) );
+			od;
+		od;
+		return res;
+end );
+
+InstallMethod( OrlikSolomonBicomplexHorizontalHomologyDimensions,
+
+	[ IsRecord, IsInt, IsInt ],
+
+	function( A, k, s )
+		local r, res, i, j;
+	
+		r := A.rank;
+	
+		res := [];
+		for i in [ 0 .. r ] do
+			res[i + 1] := [];
+		    for j in [ 0 .. r ] do
+		        res[i + 1][j + 1] := 0;
+		    od;
+		od;
+		for i in [ 0 .. k ] do
+			for j in [ 0 .. k - i ] do
+				res[i + 1][j + 1] := Dimension( ImageObject( OrlikSolomonBicomplexHorizontalHomologyMorphism( A, i, j, k, s ) ) );
+			od;
+		od;
+		return res;
+end );
+
+InstallMethod( OrlikSolomonBicomplexVerticalHomologyDimensions,
+
+	[ IsRecord, IsString ],
+
+	function( A, FG )
+		local r, res, i, j;
+	
+		r := A.rank;
+	
+		res := [];
+		for i in [ 0 .. r ] do
+			res[i + 1] := [];
+			for j in [ 0 .. r - i ] do
+				res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexVerticalHomologyObject( A, FG, i, j, r, 1 ) );
+			od;
+			for j in [ r - i + 1 .. r ] do
+				res[i + 1][j + 1] := 0;
+			od;
+		od;
+		return res;
+end );
+
+InstallMethod( OrlikSolomonBicomplexVerticalHomologyDimensions,
+
+	[ IsRecord ],
+
+	function( A )
+		local r, res, i, j;
+	
+		r := A.rank;
+
+		res := [];
+		for i in [ 0 .. r ] do
+			res[i + 1] := [];
+		    for j in [ 0 .. r ] do
+		        res[i + 1][j + 1] := 0;
+		    od;
+		od;
+
+		for i in [ 0 .. r ] do
+			for j in [ 0 .. r - i ] do
+				res[i + 1][j + 1] := Dimension( ImageObject( OrlikSolomonBicomplexVerticalHomologyMorphism( A, i, j, r, 1 ) ) );
+			od;
+		od;
+		return res;
+end );
+
+InstallMethod( OrlikSolomonBicomplexVerticalHomologyDimensions,
+
+	[ IsRecord, IsString, IsInt, IsInt ],
+
+	function( A, FG, k, s )
+		local r, res, i, j;
+	
+		r := A.rank;
+	
+		res := [];
+		for i in [ 0 .. r ] do
+			res[i + 1] := [];
+		    for j in [ 0 .. r ] do
+		        res[i + 1][j + 1] := 0;
+		    od;
+		od;
+		for i in [ 0 .. k ] do
+			for j in [ 0 .. k - i ] do
+				res[i + 1][j + 1] := Dimension( OrlikSolomonBicomplexVerticalHomologyObject( A, FG, i, j, k, s ) );
+			od;
+		od;
+		return res;
+end );
+
+InstallMethod( OrlikSolomonBicomplexVerticalHomologyDimensions,
+
+	[ IsRecord, IsInt, IsInt ],
+
+	function( A, k, s )
+		local r, res, i, j;
+	
+		r := A.rank;
+	
+		res := [];
+		for i in [ 0 .. r ] do
+			res[i + 1] := [];
+		    for j in [ 0 .. r ] do
+		        res[i + 1][j + 1] := 0;
+		    od;
+		od;
+		for i in [ 0 .. k ] do
+			for j in [ 0 .. k - i ] do
+				res[i + 1][j + 1] := Dimension( ImageObject( OrlikSolomonBicomplexVerticalHomologyMorphism( A, i, j, k, s ) ) );
+			od;
+		od;
+		return res;
+end );
+
+# InstallMethod( IsExactOrlikSolomonBicomplex,
+# 
+#     [ IsRecord ],
+#     
+#     function( A )
+#     
+#     return ForAll(
+#             [ 2 .. A.rank ],
+#             k -> ForAll(
+#                 [ 1 .. A.nr_flats[k + 1] ],
+#                 s -> B.coloring[k][s] = true or 
+#                     ( IsZero( OrlikSolomonBicomplexVerticalHomologyDimensions( B, "F", k, s ) ) 
+#                         and IsZero( OrlikSolomonBicomplexVerticalHomologyDimensions( B, "G", k, s ) ) )
+#                 )
+#                 and
+#                 ForAll(
+#                 [ 1 .. A.nr_flats[k + 1] ],
+#                 s -> A.coloring[k][s] = false or 
+#                     ( IsZero( OrlikSolomonBicomplexHorizontalHomologyDimensions( B, "F", k, s ) ) 
+#                         and IsZero( OrlikSolomonBicomplexHorizontalHomologyDimensions( B, "G", k, s ) ) )
+#                 )        
+#             );
+# end );
+# 
+# InstallMethod( DefectOfExactness,
+# 
+#     [ IsRecord ],
+#     
+#     function( A )
+#     
+#     return List(
+#             [ 2 .. B.rank ],
+#             k -> [ Filtered(
+#                     [ 1 .. B.nr_flats[k + 1] ],
+#                     s -> B.coloring[k][s] = false and 
+#                         ( not IsZero( OrlikSolomonBicomplexVerticalHomologyDimensions( B, "F", k, s ) ) 
+#                             or not IsZero( OrlikSolomonBicomplexVerticalHomologyDimensions( B, "G", k, s ) ) )
+#                 ),
+#                 Filtered(
+#                     [ 1 .. B.nr_flats[k + 1] ],
+#                     s -> B.coloring[k][s] = true and 
+#                         ( not IsZero( OrlikSolomonBicomplexHorizontalHomologyDimensions( B, "F", k, s ) ) 
+#                             or not IsZero( OrlikSolomonBicomplexHorizontalHomologyDimensions( B, "G", k, s ) ) )
+#                 ),
+#                 Filtered(
+#                     [ 1 .. B.nr_flats[k + 1] ],
+#                     s -> B.coloring[k][s] = fail and 
+#                         ( not IsZero( OrlikSolomonBicomplexVerticalHomologyDimensions( B, "F", k, s ) ) 
+#                             or not IsZero( OrlikSolomonBicomplexHorizontalHomologyDimensions( B, "G", k, s ) ) )
+#                 )
+#                 ]
+#             );
+# end );
+
+
 
 # OrlikSolomonBicomplexDimensionsImages :=
 # #		[ IsRecord, IsList ],
@@ -863,47 +1406,18 @@ end );
 
 InstallMethod( IsTameBiarrangement,
 
-	[ IsList, IsList, IsBool, IsBool ],
+	[ IsList, IsFunction, IsBool, IsBool ],
  	
  	function( L, M, default, last )
  		local m, chi;
  		
  		m := Matroid ( Concatenation( L, M ), HomalgFieldOfRationals( ) );
- 		chi := Coloring( m, Length( L ), default, last );
+ 		chi := ColoringFunction( m, Length( L ), default, last );
  		
  		return IsTame( m, chi );
  
  end );
 
-InstallMethod( IsTameCellularIntegralBiarrangement,
-
-	[ IsList, IsBool, IsBool ],
-
-	function ( w, default, last )
-
-		return IsTameBiarrangement(
-			CellularArrangement( Length( w ), PermList( w ) ),
-			SimplexArrangement ( Length( w ) - 3 ),
-			default,
-			last
-		);
-	
-end );
-
-InstallMethod( IsTameIteratedIntegralBiarrangement,
-
-	[ IsList, IsBool, IsBool ],
-
-	function ( a, default, last )
-
-		return IsTameBiarrangement(
-			IteratedIntegralArrangement( a ),
-			SimplexArrangement ( Length( a ) ),
-			default,
-			last
-		);
-	
-end );
 
 SemiSimplifiedMotiveByRectangles :=
 	function( A )
@@ -1085,6 +1599,40 @@ ConvergentConfigurations := function( n )
  dih := DihedralGroupPerm( n );
  reps := List( DoubleCosetRepsAndSizes( sym, dih, dih ), i -> i[1] );
  return Filtered( List( reps, w -> ListPerm( w, n ) ), IsConvergentConfiguration );
+end;
+
+CycleToTranspositions := function( c )
+    return List( [ 1 .. Length(c) - 1 ], i -> c{[i, i + 1]} );
+end;
+
+InstallMethod( CellularIntegralOrlikSolomonBicomplexRecord,
+
+	[ IsList ],
+
+	function ( w )
+
+	return OrlikSolomonBicomplexRecord(
+		ArrangementFromGraph( CycleToTranspositions( w ) ),
+		ArrangementFromGraph( CycleToTranspositions( [ 1 .. Length( w ) ] ) ),
+		fail,
+		true
+	);
+	
+end );
+
+BrownMotive := function( n )
+
+    M := CycleToTranspositions( [ 1 .. n + 2 ] );
+    L := Difference( Combinations( [ 1 .. n + 2 ], 2 ), M ); 
+
+    return OrlikSolomonBicomplexRecord(
+		ArrangementFromGraph( L ),
+		ArrangementFromGraph( M ),
+		false
+		true,
+		true
+	);
+
 end;
 
 
