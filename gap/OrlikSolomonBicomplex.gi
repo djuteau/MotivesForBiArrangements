@@ -853,7 +853,7 @@ end );
 
 InstallGlobalFunction( SetOrlikSolomonBicomplexHorizontalDifferentialComponent,
 
-	[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt, IsCapCategoryMorphism ],
+	#[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt, IsCapCategoryMorphism ],
 
 	function( A, FG, i, j, t, u, f )
 	
@@ -890,7 +890,7 @@ end );
 
 InstallGlobalFunction( SetOrlikSolomonBicomplexVerticalDifferentialComponent,
 
-	[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt, IsCapCategoryMorphism ],
+	#[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt, IsCapCategoryMorphism ],
 
 	function( A, FG, i, j, t, u, f )
 	
@@ -1432,7 +1432,7 @@ SemiSimplifiedMotiveByRectangles :=
 
 		rows := List(
 			[ 0 .. n ],
-			j -> ChainComplex(
+			j -> CreateComplex(
 				List(
 					[ 1 .. n + 1 ],
 					i -> OrlikSolomonBicomplexHorizontalDifferential( A, FG, i, j, n + 1, 1 )
@@ -1443,7 +1443,7 @@ SemiSimplifiedMotiveByRectangles :=
 		
 		phi := List(
 			[ 1 .. n ],
-			j -> ChainMorphism(
+			j -> CreateComplexMorphism(
 				rows[j],
 				rows[j + 1],
 				List( [ 0 .. n ], i -> OrlikSolomonBicomplexVerticalDifferential( A, FG, i, j - 1, n + 1, 1 ) ),
@@ -1451,13 +1451,13 @@ SemiSimplifiedMotiveByRectangles :=
 				)
 		);
 		
-		A.(FG).complex := ChainComplex( Reversed( phi ), -1 );
-		A.(FG).bicomplex := HomologicalBicomplex( ChainComplex( Reversed( phi ), -1 ) );
+		A.(FG).complex := CreateComplex( Reversed( phi ), -1 );
+		A.(FG).bicomplex := HomologicalBicomplex( CreateComplex( Reversed( phi ), -1 ) );
 		
 	od;
 
- L := List( [ -n - 1 .. 0 ], i -> ChainMorphism( A.G.complex[i], A.F.complex[i], List( [ 0 .. n + 1 - i ], j -> OrlikSolomonBicomplexMorphism( A, -j, i, n + 1, 1 ) ), 0 ) );
-morphism := ChainMorphism( A.G.complex, A.F.complex, L, -n - 1 );
+ L := List( [ -n - 1 .. 0 ], i -> CreateComplexMorphism( A.G.complex[i], A.F.complex[i], List( [ 0 .. n + 1 - i ], j -> OrlikSolomonBicomplexMorphism( A, -j, i, n + 1, 1 ) ), 0 ) );
+morphism := CreateComplexMorphism( A.G.complex, A.F.complex, L, -n - 1 );
 morphism := BicomplexMorphism( morphism );
 	
 	return morphism;
@@ -1474,7 +1474,7 @@ SemiSimplifiedMotiveByRectangles :=
 
 		cols := List(
 			[ 0, -1 .. -n ],
-			i -> ChainComplex(
+			i -> CreateComplex(
 				List(
 					[ 0 .. n ],
 					j -> OrlikSolomonBicomplexVerticalDifferential( A, FG, -i, j, n + 1, 1 )
@@ -1485,7 +1485,7 @@ SemiSimplifiedMotiveByRectangles :=
 		
 		phi := List(
 			[ 1 .. n ],
-			j -> ChainMorphism(
+			j -> CreateComplexMorphism(
 				rows[j],
 				rows[j + 1],
 				List( [ 0 .. n ], i -> OrlikSolomonBicomplexVerticalDifferential( A, FG, i, j - 1, n + 1, 1 ) ),
@@ -1493,13 +1493,13 @@ SemiSimplifiedMotiveByRectangles :=
 				)
 		);
 		
-		A.(FG).complex := ChainComplex( Reversed( phi ), -1 );
-		A.(FG).bicomplex := HomologicalBicomplex( ChainComplex( Reversed( phi ), -1 ) );
+		A.(FG).complex := CreateComplex( Reversed( phi ), -1 );
+		A.(FG).bicomplex := HomologicalBicomplex( CreateComplex( Reversed( phi ), -1 ) );
 		
 	od;
 
- L := List( [ -n - 1 .. 0 ], i -> ChainMorphism( A.G.complex[i], A.F.complex[i], List( [ 0 .. n + 1 - i ], j -> OrlikSolomonBicomplexMorphism( A, -j, i, n + 1, 1 ) ), 0 ) );
-morphism := ChainMorphism( A.G.complex, A.F.complex, L, -n - 1 );
+ L := List( [ -n - 1 .. 0 ], i -> CreateComplexMorphism( A.G.complex[i], A.F.complex[i], List( [ 0 .. n + 1 - i ], j -> OrlikSolomonBicomplexMorphism( A, -j, i, n + 1, 1 ) ), 0 ) );
+morphism := CreateComplexMorphism( A.G.complex, A.F.complex, L, -n - 1 );
 morphism := BicomplexMorphism( morphism );
 	
 	return morphism;
@@ -1518,7 +1518,7 @@ end;
 # 		[ List(
 # 			[ 0 .. 2 * n ],
 # 			r -> Dimension( DefectOfExactnessAt(
-# 				ChainComplex( List( Reversed( [ 0 .. n - 1 ] ), j -> OrlikSolomonBicomplexVerticalDifferential( A, FG, 0, j, n + 1, 1 ) ), -n + 1 ),
+# 				CreateComplex( List( Reversed( [ 0 .. n - 1 ] ), j -> OrlikSolomonBicomplexVerticalDifferential( A, FG, 0, j, n + 1, 1 ) ), -n + 1 ),
 # 				-r
 # 			) )
 # 		) ],
@@ -1526,7 +1526,7 @@ end;
 # 		[ List(
 # 			[ 0 .. 2 * n ],
 # 			r -> Dimension( DefectOfExactnessAt(
-# 				ChainComplex( List( [ 1 .. n ], i -> OrlikSolomonBicomplexHorizontalDifferential( A, FG, i, 0, n + 1, 1 ) ), 1 ),
+# 				CreateComplex( List( [ 1 .. n ], i -> OrlikSolomonBicomplexHorizontalDifferential( A, FG, i, 0, n + 1, 1 ) ), 1 ),
 # 				r
 # 			) )
 # 		) ]
@@ -1621,14 +1621,15 @@ InstallMethod( CellularIntegralOrlikSolomonBicomplexRecord,
 end );
 
 BrownMotive := function( n )
-
+    local M, L;
+    
     M := CycleToTranspositions( [ 1 .. n + 2 ] );
     L := Difference( Combinations( [ 1 .. n + 2 ], 2 ), M ); 
 
     return OrlikSolomonBicomplexRecord(
 		ArrangementFromGraph( L ),
 		ArrangementFromGraph( M ),
-		false
+		false,
 		true,
 		true
 	);
