@@ -853,7 +853,7 @@ end );
 
 InstallGlobalFunction( SetOrlikSolomonBicomplexHorizontalDifferentialComponent,
 
-	[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt, IsCapCategoryMorphism ],
+	#[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt, IsCapCategoryMorphism ],
 
 	function( A, FG, i, j, t, u, f )
 	
@@ -890,7 +890,7 @@ end );
 
 InstallGlobalFunction( SetOrlikSolomonBicomplexVerticalDifferentialComponent,
 
-	[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt, IsCapCategoryMorphism ],
+	#[ IsRecord, IsString, IsInt, IsInt, IsInt, IsInt, IsCapCategoryMorphism ],
 
 	function( A, FG, i, j, t, u, f )
 	
@@ -1621,14 +1621,15 @@ InstallMethod( CellularIntegralOrlikSolomonBicomplexRecord,
 end );
 
 BrownMotive := function( n )
-
+    local M, L;
+    
     M := CycleToTranspositions( [ 1 .. n + 2 ] );
     L := Difference( Combinations( [ 1 .. n + 2 ], 2 ), M ); 
 
     return OrlikSolomonBicomplexRecord(
 		ArrangementFromGraph( L ),
 		ArrangementFromGraph( M ),
-		false
+		false,
 		true,
 		true
 	);
