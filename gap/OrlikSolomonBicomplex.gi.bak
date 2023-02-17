@@ -280,7 +280,7 @@ InstallMethod( OrlikSolomonBicomplexRecord,
 		
 		DeactivateCachingOfCategory( matrixcat );
 		
-		DisableBasicOperationTypeCheck( matrixcat );
+		#DisableBasicOperationTypeCheck( matrixcat );
 		
 		SetCachingToCrisp( matrixcat, "ZeroMorphism" );
 		
@@ -311,7 +311,7 @@ end );
 # 		betti := [];
 # 				
 # 		for k in [ 0 .. n ] do
-# 			B := DoubleCochainComplex(
+# 			B := CohomologicalBicomplex(
 # 				A.cat,
 # 				function( i, j )
 # 					if i < -k - 1 or i > 0 then
@@ -337,10 +337,10 @@ end );
 # 				end
 # 			);
 # 			
-# 		SetAboveBound( B, n - k + 1 );
-# 		SetBelowBound( B, -1 );
-# 		SetRightBound( B, 1 );
-# 		SetLeftBound( B, -k - 1 );
+# 		SetAbove_Bound( B, n - k + 1 );
+# 		SetBelow_Bound( B, -1 );
+# 		SetRight_Bound( B, 1 );
+# 		SetLeft_Bound( B, -k - 1 );
 # 		
 # #		Error( "" );
 # 
@@ -368,15 +368,15 @@ InstallMethod( OrlikSolomonBicomplex,
 		
 		r := RankOfMatroid( A.matroid );
 
-		A.( String( S ) ) := DoubleCochainComplex(
+		A.( String( S ) ) := CohomologicalBicomplex(
 			A.cat,
 			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i - 1, j ); end,
 			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i, j + 1 ); end
 		);
-		SetAboveBound( A.( String( S ) ), r + 1 );
-		SetBelowBound( A.( String( S ) ), -1 );
-		SetRightBound( A.( String( S ) ), 1 );
-		SetLeftBound( A.( String( S ) ), -r - 1 );
+		SetAbove_Bound( A.( String( S ) ), r + 1 );
+		SetBelow_Bound( A.( String( S ) ), -1 );
+		SetRight_Bound( A.( String( S ) ), 1 );
+		SetLeft_Bound( A.( String( S ) ), -r - 1 );
 
 	return A.( String( S ) );
 end ); 
@@ -389,15 +389,15 @@ InstallMethod( OrlikSolomonBicomplex,
 		
 		r := RankOfMatroid( A.matroid );
 
-		res := DoubleCochainComplex(
+		res := CohomologicalBicomplex(
 			A.cat,
 			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i - 1, j ); end,
 			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i, j + 1 ); end
 		);
-		SetAboveBound( res, r + 1 );
-		SetBelowBound( res, -1 );
-		SetRightBound( res, 1 );
-		SetLeftBound( res, -r - 1 );
+		SetAbove_Bound( res, r + 1 );
+		SetBelow_Bound( res, -1 );
+		SetRight_Bound( res, 1 );
+		SetLeft_Bound( res, -r - 1 );
 
 	return res;
 end ); 
@@ -666,10 +666,10 @@ InstallGlobalFunction( OrlikSolomonBicomplexDifferential,
             SS := Filtered( FlatsOfRankExtended( A.matroid, i + j ), S -> IsSubset( Sigma, S ) );
             TT := Filtered( FlatsOfRankExtended( A.matroid, k + l ), T -> IsSubset( Sigma, T ) );
 #			f := 
-			return MorphismBetweenDirectSums(
-            	DirectSum( A.cat, List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j : rank := i + j ) ) ),
+			return MorphismBetweenDirectSums( A.cat,
+            	List( SS, S -> OrlikSolomonBicomplexObject( A, S, i, j : rank := i + j ) ),
                 List( SS, S -> List( TT, T -> OrlikSolomonBicomplexDifferentialComponent( A, S, i, j, T, k, l : rankS := i + j, rankT := k + l ) ) ),
-                DirectSum( A.cat, List( TT, T -> OrlikSolomonBicomplexObject( A, T, k, l : rank := k + l ) ) )
+                List( TT, T -> OrlikSolomonBicomplexObject( A, T, k, l : rank := k + l ) )
  			);
 #			SetOrlikSolomonBicomplexDifferential( A, Sigma, i, j, k, l, f );
 #		fi;
@@ -844,7 +844,7 @@ end);
 # 			return A.( String( S ) );
 # 		fi;
 # 
-# 		A.( String( S ) ) := DoubleCochainComplex(
+# 		A.( String( S ) ) := CohomologicalBicomplex(
 # 			A.cat,
 # 			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i - 1, j ); end,
 # 			function( i, j ) return OrlikSolomonBicomplexDifferential( A, S, -i, j, -i, j + 1 ); end
