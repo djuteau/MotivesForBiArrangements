@@ -11,8 +11,8 @@
 #! @Description
 #! The GAP category of Orlik-Solomon bicomplex records.
 #! Those are records containing a matroid, a coloring function,
-#! a vector space for each flat and an arrow for each adjacent
-#! pair of flats.
+#! $k+1$ vector space for each flat of codimension $k$,
+#! and a zigzag of arrows for each adjacent pair of flats.
 #! @Arguments record
 
 DeclareCategory( "IsOrlikSolomonBicomplexRecord",
